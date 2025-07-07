@@ -29,4 +29,4 @@ Data Files
 
 In addition to `hosts.cfg` and the JSON files, the following data file exists:
 
-* `tests/rhui4_tests/tested_repos.yaml`: Names of repositories to test. These repositories must be part of the entitlement certificate which is uploaded to RHUA. For more information about the certificate, see the [requirements section in the tests readme file](tests/README.md#requirements).
+* `tests/rhui5_tests/tested_repos.yaml`: Names of repositories to test. These repositories must be part of the entitlement certificate which is uploaded to RHUA. For more information about the certificate, see the [requirements section in the tests readme file](tests/README.md#requirements).

@@ -1,0 +1,98 @@
+{
+    "af-south-1": {
+        "AMI": "ami-07f4b8c975451cecb"
+    },
+    "ap-east-1": {
+        "AMI": "ami-0fd9d8057789b2545"
+    },
+    "ap-northeast-1": {
+        "AMI": "ami-09b7ba44014f33dca"
+    },
+    "ap-northeast-2": {
+        "AMI": "ami-0de1f0d7eb54663ca"
+    },
+    "ap-northeast-3": {
+        "AMI": "ami-02a1a7caa150cec45"
+    },
+    "ap-south-1": {
+        "AMI": "ami-0ea42a3786434655c"
+    },
+    "ap-south-2": {
+        "AMI": "ami-08c12a9ed7445d003"
+    },
+    "ap-southeast-1": {
+        "AMI": "ami-0f301346d7e7bbe56"
+    },
+    "ap-southeast-2": {
+        "AMI": "ami-00c7b30ce9351e253"
+    },
+    "ap-southeast-3": {
+        "AMI": "ami-038de5a8453cdaeac"
+    },
+    "ap-southeast-4": {
+        "AMI": "ami-087d23ef839e764b6"
+    },
+    "ap-southeast-5": {
+        "AMI": "ami-0eea715a6bf5e9279"
+    },
+    "ap-southeast-7": {
+        "AMI": "ami-03c5584ce1e3597d3"
+    },
+    "ca-central-1": {
+        "AMI": "ami-0b7503e03bfa6b9fb"
+    },
+    "ca-west-1": {
+        "AMI": "ami-0f9c52dbfb2c4470b"
+    },
+    "eu-central-1": {
+        "AMI": "ami-0d682038d55be0fbc"
+    },
+    "eu-central-2": {
+        "AMI": "ami-0bc5e9703c6e2f8a1"
+    },
+    "eu-north-1": {
+        "AMI": "ami-0298e94b5c99d7cdc"
+    },
+    "eu-south-1": {
+        "AMI": "ami-04d155f363e91b1e4"
+    },
+    "eu-south-2": {
+        "AMI": "ami-02e0a2abba6d7422a"
+    },
+    "eu-west-1": {
+        "AMI": "ami-0c1ae29043ff9785d"
+    },
+    "eu-west-2": {
+        "AMI": "ami-0b3a59ac043c7696e"
+    },
+    "eu-west-3": {
+        "AMI": "ami-03a08fe4ae2f0d25d"
+    },
+    "il-central-1": {
+        "AMI": "ami-0e6af6c7c36510558"
+    },
+    "me-central-1": {
+        "AMI": "ami-08c1d9010d4f471f7"
+    },
+    "me-south-1": {
+        "AMI": "ami-098d25e0635bf9723"
+    },
+    "mx-central-1": {
+        "AMI": "ami-0d9d41ca4a68fbd6d"
+    },
+    "sa-east-1": {
+        "AMI": "ami-069068eb2f28c2371"
+    },
+    "us-east-1": {
+        "AMI": "ami-01a52a1073599b7c8"
+    },
+    "us-east-2": {
+        "AMI": "ami-037e488c5d0f0468f"
+    },
+    "us-west-1": {
+        "AMI": "ami-0802a76dd06814c1c"
+    },
+    "us-west-2": {
+        "AMI": "ami-08bdc2497d9167fab"
+    }
+}
