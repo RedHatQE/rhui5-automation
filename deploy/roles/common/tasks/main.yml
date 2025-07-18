@@ -1,0 +1,11 @@
+---
+# file roles/common/tasks/main.yml
+# upgrade (if requested)
+# enable FIPS (ditto)
+# set up & configure ntp on all the hosts
+# install vim
+- import_tasks: upgrade.yml
+- import_tasks: fips.yml
+- import_tasks: ntp.yml
+- import_tasks: hosts.yml
+- import_tasks: vim.yml

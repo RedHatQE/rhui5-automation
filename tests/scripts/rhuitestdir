@@ -1,0 +1,5 @@
+#!/bin/bash
+# Find and print the path to the directory containing the RHUI tests.
+
+base_dir=$(dirname $(dirname $(readlink -f $BASH_SOURCE)))
+echo $base_dir/share/rhui5_tests_lib/rhui5_tests

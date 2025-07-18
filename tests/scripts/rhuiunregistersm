@@ -1,0 +1,22 @@
+#!/usr/bin/python
+'''Unregister the RHUA from RHSM.'''
+
+import sys
+
+from stitches.expect import ExpectFailed
+
+from rhui5_tests_lib.conmgr import ConMgr
+from rhui5_tests_lib.helpers import Helpers
+from rhui5_tests_lib.subscription import RHSMRHUI
+
+print("Unregistering the RHUA.")
+CONNECTION = ConMgr.connect()
+if not Helpers.is_registered(CONNECTION):
+    print("It is not registered, skipping.")
+    sys.exit(0)
+try:
+    RHSMRHUI.unregister_system(CONNECTION)
+    print("Unregistered.")
+except ExpectFailed as err:
+    print("An error occurred while unregistering it:")
+    print(err)

@@ -1,0 +1,5 @@
+---
+# file: roles/common/handlers/main.yml
+# include the common handlers
+- import_tasks: ntp.yml
+- import_tasks: restorecon.yml

@@ -1,0 +1,47 @@
+127.0.0.1 localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1       localhost localhost.localdomain localhost6 localhost6.localdomain6
+{% if 'LAUNCHPAD' in groups %}
+{% if groups['LAUNCHPAD']|length > 0 %}
+{{ hostvars[groups['LAUNCHPAD'][0]]['ansible_all_ipv4_addresses'][0] }} launchpad launchpad.example.com
+{% endif %}
+{% endif %}
+
+{% if 'RHUA' in groups %}
+{% if groups['RHUA']|length > 0 %}
+{{ hostvars[groups['RHUA'][0]]['ansible_all_ipv4_addresses'][0] }} rhua rhua.example.com
+{% endif %}
+{% endif %}
+
+{% if 'NFS' in groups %}
+{% if groups['NFS']|length > 0 %}
+{{ hostvars[groups['NFS'][0]]['ansible_all_ipv4_addresses'][0] }} nfs nfs.example.com
+{% endif %}
+{% endif %}
+
+{% if 'CDS' in groups %}
+{% for cds in groups['CDS'] %} 
+{{ hostvars[cds]['ansible_all_ipv4_addresses'][0] }} cds0{{ loop.index }} cds0{{ loop.index }}.example.com
+{% endfor %}
+{% endif %}
+
+{% if 'HAPROXY' in groups %}
+{% for haproxy in groups['HAPROXY'] %}
+{{ hostvars[haproxy]['ansible_all_ipv4_addresses'][0] }} hap0{{ loop.index }} hap0{{ loop.index }}.example.com
+{% endfor %}
+{% endif %}
+
+{% if 'HAPROXY' in groups %}
+{{ hostvars[groups['HAPROXY'][0]]['ansible_all_ipv4_addresses'][0] }} lb lb.example.com
+{% endif %}
+
+{% if 'CLI' in groups %}
+{% for cli in groups['CLI'] %}
+{{ hostvars[cli]['ansible_all_ipv4_addresses'][0] }} cli0{{ loop.index }} cli0{{ loop.index }}.example.com
+{% endfor %}
+{% endif %}
+
+{% if 'TEST' in groups %}
+{% if groups['TEST']|length > 0 %}
+{{ hostvars[groups['TEST'][0]]['ansible_all_ipv4_addresses'][0] }} test test.example.com
+{% endif %}
+{% endif %}

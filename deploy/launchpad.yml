@@ -1,0 +1,8 @@
+---
+# file: launchpad.yml
+# the configuration of the launchpad and the actual launch of the installer
+- hosts: LAUNCHPAD
+  handlers:
+    - import_tasks: roles/common/handlers/main.yml
+  roles:
+    - launchpad

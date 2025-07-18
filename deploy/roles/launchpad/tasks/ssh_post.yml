@@ -1,0 +1,17 @@
+# file: roles/launchpad/tasks/ssh-post.yml
+# SSH post-configuration for the launchpad
+
+- name: save the private key on the RHUA so it can log in to the other nodes
+  copy:
+    content: "{{ hostvars[groups['LAUNCHPAD'][0]]['id_ecdsa_launchpad_priv'] }}"
+    dest: /var/lib/rhui/root/.ssh/id_ecdsa_launchpad
+    owner: rhui
+    group: rhui
+    mode: 0600
+  delegate_to: "{{ groups['RHUA'][0] }}"
+  tags: launchpad
+
+- name: set the right SELinux context for the saved key
+  command: chcon -t container_file_t /var/lib/rhui/root/.ssh/id_ecdsa_launchpad
+  delegate_to: "{{ groups['RHUA'][0] }}"
+  tags: launchpad

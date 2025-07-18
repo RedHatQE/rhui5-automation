@@ -1,0 +1,153 @@
+# file: roles/tests/tasks/main.yml
+# deploy & run tests
+
+- name: set hostname
+  hostname: name="test.example.com"
+  when: "'TEST' in groups"
+  tags: tests
+
+- name: install git
+  package: name=git state=present
+  tags: tests
+
+- name: clone this project on the test machine
+  git:
+    repo: https://github.com/RedHatQE/rhui5-automation.git
+    dest: /root/rhui5-automation
+    version: "{{ branch | default('main') }}"
+  tags: tests
+
+- name: install the patch utility
+  package: name=patch state=present
+  when: patch is defined
+  tags: tests
+
+- name: apply a patch (if supplied)
+  patch:
+    src:  "{{ patch }}"
+    basedir: /root/rhui5-automation
+    strip: 1
+  when: patch is defined
+  tags: tests
+
+- name: install bash-completion to simplify test execution
+  package: name=bash-completion state=present
+  tags: tests
+
+- name: install pip
+  package: name=python3.11-pip state=present
+  tags: tests
+
+- name: install tests
+  command: pip3.11 install --prefix /usr .
+  args:
+    chdir: /root/rhui5-automation/tests
+  tags: tests
+
+- name: generate ssh keys
+  command: ssh-keygen -m pem -N "" -t ecdsa -f /root/.ssh/id_ecdsa_test creates=/root/.ssh/id_ecdsa_test
+  notify: restorecon root ssh
+  tags: tests
+
+- name: slurp the test pub key
+  slurp: src=/root/.ssh/id_ecdsa_test.pub
+  register: slurp_id_ecdsa_test
+  tags: tests,xxx
+
+- name: set the pub_key as a global fact
+  set_fact:
+    id_ecdsa_test_pub: "{{ slurp_id_ecdsa_test.content|b64decode|trim + ' ' + 'test.example.com' }}"
+  tags: tests,xxx
+
+- name: set authorized keys on all roles except TEST itself to allow root connection with the key
+  authorized_key:
+    key: "{{ hostvars[groups['TEST'][0]]['id_ecdsa_test_pub'] }}"
+    user: root
+    state: present
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups['CDS'] + groups['HAPROXY'] + groups['RHUA'] + groups['CLI']|default([]) + groups['LAUNCHPAD'] }}"
+  tags: tests,xxx
+  
+- name: upload files containing auxiliary files that might be needed for some tests (e.g. entitlement certificate, RPMs for custom repos) 
+  copy:
+    src: "{{ extra_files }}"
+    dest: /var/lib/rhui/root/test_files/
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups['RHUA'] + groups['LAUNCHPAD'] }}"
+  register: upload_extra_files
+  tags: tests
+  
+- name: set the right SELinux context for the zip
+  command: chcon -t container_file_t /var/lib/rhui/root/test_files/{{ extra_files | basename }}
+  delegate_to: "{{ groups['RHUA'][0] }}"
+  tags: tests,seli
+
+- name: install unzip
+  package:
+    name: unzip
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups['RHUA'] + groups['LAUNCHPAD'] }}"
+  tags: tests
+
+- name: unzip the test files
+  command: unzip -n {{ extra_files | basename }}
+  args:
+    chdir: /var/lib/rhui/root/test_files/
+    creates: /var/lib/rhui/root/test_files/rhcert.pem
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups['RHUA'] + groups['LAUNCHPAD'] }}"
+  register: unzip_files
+  tags: tests
+
+- name: unpack tarballs with test repos and custom certs
+  shell: 'for f in *.tar; do tar xf $f; done'
+  args:
+    chdir: /var/lib/rhui/root/test_files/
+  delegate_to: "{{ groups['RHUA'][0] }}"
+  tags: tests
+
+- name: change the ownership of the unpacked files on the launchpad to the unprivileged user
+  file:
+    path: /var/lib/rhui/root/test_files/custom_certs
+    state: directory
+    recurse: yes
+    owner: "{{ unpriv_user }}"
+    group: "{{ unpriv_user }}"
+  delegate_to: "{{ groups['LAUNCHPAD'][0] }}"
+  tags: tests
+
+- name: install packages needed by tests on RHUI nodes
+  package:
+    name:
+      - sos
+      - jq
+    state: present
+    use: "{{ ansible_facts['pkg_mgr'] }}"
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups['RHUA'] + groups['CDS'] }}"
+  tags: tests
+
+- name: upload Red Hat credentials
+  copy:
+    src: "{{ credentials }}"
+    dest: /var/lib/rhui/root/test_files/credentials.conf
+  delegate_to: "{{ groups['RHUA'][0] }}"
+  when: credentials is defined
+  tags: tests
+
+- name: set the right SELinux context for the credentials
+  command: chcon -t container_file_t /var/lib/rhui/root/test_files/credentials.conf
+  delegate_to: "{{ groups['RHUA'][0] }}"
+  tags: tests,seli
+
+- name: run tests
+  command: "rhuitests {{ tests }} quiet"
+  register: testreport
+  when: tests is defined
+  tags: run_tests
+
+- name: print test report locations
+  debug:
+    var: testreport.stdout_lines
+  when: tests is defined
+  tags: run_tests

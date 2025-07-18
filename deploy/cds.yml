@@ -1,0 +1,8 @@
+---
+# file: cds.yml
+# cds playbook
+- hosts: CDS
+  handlers:
+    - import_tasks: roles/common/handlers/main.yml
+  roles:
+    - cds

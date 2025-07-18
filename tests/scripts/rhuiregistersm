@@ -1,0 +1,36 @@
+#!/usr/bin/python
+'''Register the RHUA with RHSM.'''
+
+import argparse
+from stitches.expect import ExpectFailed
+import sys
+
+from rhui5_tests_lib.cfg import Config
+from rhui5_tests_lib.conmgr import ConMgr
+from rhui5_tests_lib.helpers import Helpers
+from rhui5_tests_lib.subscription import RHSMRHUI
+from rhui5_tests_lib.util import Util
+
+PRS = argparse.ArgumentParser(description="Register the RHUA with RHSM.",
+                              formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+PRS.add_argument("--force",
+                 help="forcibly register already registered systems",
+                 action="store_true")
+ARGS = PRS.parse_args()
+
+print("Registering the RHUA.")
+CONNECTION = ConMgr.connect()
+# uninstall the AWS repo configuration package (if installed) as it won't be needed anymore
+# (the same repo IDs in RHSM and AWS would confuse the Amazon ID plug-in, which would barf)
+Util.remove_amazon_rhui_conf_rpm(CONNECTION)
+# get credentials
+USERNAME, PASSWORD = Config.get_credentials(CONNECTION)
+if Helpers.is_registered(CONNECTION) and not ARGS.force:
+    print("It is already registered and --force was not used, skipping.")
+    sys.exit(0)
+try:
+    RHSMRHUI.register_system(CONNECTION, USERNAME, PASSWORD)
+    print("Registered.")
+except ExpectFailed as err:
+    print("An error occurred while registering it:")
+    print(err)

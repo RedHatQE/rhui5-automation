@@ -1,0 +1,8 @@
+---
+# file: roles/nfs/handlers/main.yml
+# handlers for nfs deployment
+
+- name: restart nfs-server
+  service:
+    name: nfs-server
+    state: restarted

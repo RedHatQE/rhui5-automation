@@ -1,0 +1,44 @@
+---
+# file: roles/rhui_nodes/tasks/main.yml
+# tasks common to the RHUA node
+
+- name: uninstall insights
+  package:
+    name:
+      - insights-client
+      - rhc
+    state: absent
+  tags: rhui_nodes
+
+- name: unregister from RHSM (the ghost subscription that would interfere with the entitlement cert)
+  redhat_subscription:
+    state: absent
+  tags: rhui_nodes
+
+- name: disable rhsmcertd
+  service:
+    name: rhsmcertd
+    state: stopped
+    enabled: no
+  tags: rhui_nodes
+
+- name: block for RHSM
+  block:
+  - name: register with RHSM
+    redhat_subscription:
+      state: present
+      username: "{{ lookup('ini', 'username section=rh file=' + credentials) }}"
+      password: "{{ lookup('ini', 'password section=rh file=' + credentials) }}"
+      consumer_type: rhui
+    tags: rhui_nodes
+
+  - name: make sure RHSM repo management is enabled
+    command: subscription-manager config --rhsm.manage_repos=1
+    tags: rhui_nodes
+
+  - name: uninstall rh-amazon-rhui-client
+    package:
+      name: rh-amazon-rhui-client
+      state: absent
+    tags: rhui_nodes
+  when: rhsm | default(False) | bool

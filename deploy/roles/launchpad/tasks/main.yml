@@ -1,0 +1,107 @@
+# file: roles/launchpad/tasks/main.yml
+# install the RHUI 5 RHUA
+
+- name: set hostname
+  hostname: name="launchpad.example.com"
+  when: "'LAUNCHPAD' in groups"
+  tags: launchpad
+
+- import_tasks: ssh_pre.yml
+  tags: launchpad
+
+- name: install podman
+  package:
+    name: podman
+    state: latest
+  tags: launchpad
+
+- name: install nfs-utils
+  package:
+    name: nfs-utils
+    state: latest
+  tags: launchpad
+
+- name: block for insecure registries
+  block:
+  - name: create the directory for container certs
+    file:
+      name: "/etc/containers/certs.d/{{ registry['hostname'] }}"
+      state: directory
+    tags: launchpad
+
+  - name: copy the RH CA cert to this directory
+    copy:
+      src: /etc/rhsm/ca/redhat-uep.pem
+      dest: "/etc/containers/certs.d/{{ registry['hostname'] }}/ca.crt"
+      remote_src: True
+    tags: launchpad
+  when: registry['insecure'] | default(False) | bool
+  tags: launchpad
+
+- name: enable lingering
+  command: "loginctl enable-linger {{ unpriv_user }}"
+  tags: launchpad
+
+- name: log in to the registry
+  containers.podman.podman_login:
+    registry: "{{ registry['hostname'] }}"
+    username: "{{ registry['username'] }}"
+    password: "{{ registry['password'] }}"
+  become: False
+  tags: launchpad
+
+- name: launch the installer
+  containers.podman.podman_container:
+    name: rhui_installer_task
+    image: "{{ registry['hostname'] }}/{{ installer_image }}"
+    rm: true
+    interactive: true
+    tty: true
+    volume:
+      - "/home/{{ unpriv_user }}/.ssh/id_ecdsa_launchpad:/ssh-keyfile:Z"
+    command:
+      - "rhui-installer"
+      - "--target-host"
+      - "rhua.example.com"
+      - "--target-user"
+      - "{{ unpriv_user }}"
+      - "--remote-fs-server"
+      - "nfs.example.com:/export"
+      - "--cds-lb-hostname"
+      - "lb.example.com"
+      - "--rhua-container-registry"
+      - "{{ registry['hostname'] }}"
+      - "--rhua-container-image"
+      - "{{ rhua_image }}"
+      - "--podman-username"
+      - "{{ registry['username'] }}"
+      - "--podman-password"
+      - "{{ registry['password'] }}"
+  become: False
+  tags: launchpad,reinstall
+
+- name: wait for the RHUA service to start listening on port 443
+  wait_for:
+    host: rhua.example.com
+    port: 443
+    delay: 10
+  tags: launchpad,reinstall
+
+- name: wait a bit more before checking rhui-manager
+  pause:
+    minutes: 1
+  tags: launchpad,reinstall
+
+- name: check if rhui-manager can run
+  shell: . /root/.bashrc ; rhua rhui-manager --noninteractive status ; true
+  delegate_to: "{{ groups['RHUA'][0] }}"
+  register: rhuimanagercmd
+  tags: launchpad,reinstall
+
+- name: print the output from rhui-manager
+  debug:
+    var: rhuimanagercmd.stdout_lines
+  tags: launchpad,reinstall
+
+- import_tasks: ssh_post.yml
+  tags: launchpad

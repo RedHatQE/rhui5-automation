@@ -1,0 +1,114 @@
+#!/usr/bin/python
+"""Check for errors in RHUI repository synchronization statuses"""
+
+import argparse
+import os
+import re
+import socket
+import sys
+import time
+
+from stitches.expect import Expect
+from rhui5_tests_lib.conmgr import ConMgr, DOMAIN, USER_KEY, USER_NAME, SUDO_USER_NAME
+from rhui5_tests_lib.rhuimanager import RHUIManager
+
+R5A_CLOUDFORMATION = socket.gethostname().endswith(DOMAIN)
+
+# exit codes: 0 = OK, 1 = runtime error,
+#             2 = sync error, 4 = workflow completion error,
+#             6 = sync & workflow completion errors
+ECODE_GOOD = 0
+ECODE_SYNC_ERROR = 0b10
+ECODE_INCOMP_WF_ERROR = 0b100
+
+PRS = argparse.ArgumentParser(description="Check for sync issues.",
+                              formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+# the default values of the following options depend on whether this script is running
+# on a RHUI deployed by rhui5-automation or not
+PRS.add_argument("--hostname",
+                 help="RHUA hostname",
+                 default=ConMgr.get_rhua_hostname() if R5A_CLOUDFORMATION else None)
+PRS.add_argument("--ssh-user",
+                 help="SSH user name",
+                 default=USER_NAME if R5A_CLOUDFORMATION else SUDO_USER_NAME)
+PRS.add_argument("--ssh-key",
+                 help="SSH private key",
+                 default=USER_KEY if R5A_CLOUDFORMATION else os.path.expanduser("~/.ssh/id_rsa"))
+PRS.add_argument("--rhui-admin-password",
+                 help="the RHUI administrator password (in case it's necessary to log in)")
+PRS.add_argument("--pattern",
+                 help="only care about repos matching the given regular expression")
+PRS.add_argument("--ignore-beta-8",
+                 help="ignore errors syncing RHEL 8 Beta repos",
+                 action="store_true")
+PRS.add_argument("--ignore-beta-9",
+                 help="ignore errors syncing RHEL 9 Beta repos",
+                 action="store_true")
+PRS.add_argument("--ignore-running",
+                 help="ignore repos that are currently being synced",
+                 action="store_true")
+ARGS = PRS.parse_args()
+
+if not ARGS.hostname:
+    print("No hostname specified.")
+    PRS.print_help()
+    sys.exit(1)
+
+RHUA = ConMgr.connect(ARGS.hostname, ARGS.ssh_user, ARGS.ssh_key)
+if ARGS.ssh_user != "root":
+    Expect.enter(RHUA, "sudo su -")
+
+try:
+    RHUIManager.initial_run(RHUA, password=ARGS.rhui_admin_password)
+except TypeError:
+    print("Not logged in and no password specified.")
+    sys.exit(1)
+
+RHUIManager.screen(RHUA, "sync")
+Expect.enter(RHUA, "vr")
+raw_lines = RHUIManager.list_lines(RHUA, "Enter value", False, 120)
+Expect.enter(RHUA, "b")
+Expect.enter(RHUA, "q")
+time.sleep(5)
+
+errors = [line for line in raw_lines[4:] if "Success" not in line and "Client Config" not in line]
+
+if ARGS.pattern:
+    matches = []
+    for number, content in enumerate(errors):
+        if re.match("[ 0-9]+-.*" + ARGS.pattern, content):
+            matches.extend(errors[number:number+2])
+    errors = matches
+
+else:
+    if ARGS.ignore_beta_8:
+        errors = [line for line in errors if not re.search("Linux 8.*Beta", line) and
+                                         "beta/rhel8" not in line]
+    if ARGS.ignore_beta_9:
+        errors = [line for line in errors if not re.search("Linux 9.*Beta", line) and
+                                         "beta/rhel9" not in line]
+    if ARGS.ignore_running:
+        errors = [line for line in errors if "Running" not in line]
+
+# also check the workflow screen
+RHUIManager.screen(RHUA, "sync")
+Expect.enter(RHUA, "wf")
+raw_lines = RHUIManager.list_lines(RHUA, "Enter value", False, 120)
+Expect.enter(RHUA, "b")
+Expect.enter(RHUA, "q")
+
+incomplete_workflows = [line for line in raw_lines[4:] if "✗" in line]
+
+RET_CODE = ECODE_GOOD
+
+if errors:
+    print("Errors:")
+    print("\n".join(errors))
+    RET_CODE |= ECODE_SYNC_ERROR
+
+if incomplete_workflows:
+    print("Incomplete workflows:")
+    print("\n".join(incomplete_workflows))
+    RET_CODE |= ECODE_INCOMP_WF_ERROR
+
+sys.exit(RET_CODE)

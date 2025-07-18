@@ -1,0 +1,34 @@
+# file: roles/launchpad/tasks/ssh-pre.yml
+# SSH pre-configuration for the launchpad
+
+- name: generate an SSH key to use for the RHUI nodes
+  become: false
+  command: ssh-keygen -m pem -N "" -t ecdsa -f /home/{{ unpriv_user }}/.ssh/id_ecdsa_launchpad creates=/home/{{ unpriv_user }}/.ssh/id_ecdsa_launchpad
+  #notify: restorecon root ssh
+  tags: launchpad
+
+- name: slurp the launchpad public key
+  slurp: src=/home/{{ unpriv_user }}/.ssh/id_ecdsa_launchpad.pub
+  register: slurp_pubkey
+  tags: launchpad
+
+- name: slurp the launchpad private key
+  slurp: src=/home/{{ unpriv_user }}/.ssh/id_ecdsa_launchpad
+  register: slurp_privkey
+  tags: launchpad
+
+- name: set the keys as global facts
+  set_fact:
+    #id_ecdsa_launchpad_pub: "{{ slurp_pubkey.content|b64decode|trim + ' ' + 'launchpad.example.com' }}"
+    id_ecdsa_launchpad_pub: "{{ slurp_pubkey.content|b64decode|trim }}"
+    id_ecdsa_launchpad_priv: "{{ slurp_privkey.content|b64decode|trim }}"
+  tags: launchpad
+
+- name: set authorized keys on RHUI nodes to allow connections with the key
+  authorized_key:
+    key: "{{ hostvars[groups['LAUNCHPAD'][0]]['id_ecdsa_launchpad_pub'] }}"
+    user: "{{ unpriv_user }}"
+    state: present
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups['CDS']|default([]) + groups['HAPROXY']|default([]) + groups['RHUA']|default([]) + groups['CLI']|default([]) }}"
+  tags: launchpad

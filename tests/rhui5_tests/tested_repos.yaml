@@ -1,0 +1,266 @@
+yum_repos:
+    6:
+        x86_64:
+            name: "Red Hat Enterprise Linux for SAP (RHEL 6 Server) (RPMs) from RHUI"
+            version: "6Server"
+            kind: "Yum"
+            path: "content/dist/rhel/rhui/server/6/6Server/x86_64/sap/os"
+            id: "rhel-sap-for-rhel-6-server-rhui-rpms-6Server"
+            label: "rhel-sap-for-rhel-6-server-rhui-rpms"
+            test_package: "vm-dump-metrics"
+    7:
+        x86_64:
+            name: "Red Hat Enterprise Linux for SAP (RHEL 7 Server) (RPMs) from RHUI"
+            version: "7Server-x86_64"
+            kind: "Yum"
+            path: "content/dist/rhel/rhui/server/7/7Server/x86_64/sap/os"
+            id: "rhel-sap-for-rhel-7-server-rhui-rpms-7Server-x86_64"
+            label: "rhel-sap-for-rhel-7-server-rhui-rpms"
+            test_package: "vm-dump-metrics"
+        aarch64:
+            name: "Red Hat Developer Tools (for RHEL 7 Server for ARM 64) RPMs from RHUI"
+            version: "7Server-aarch64"
+            kind: "Yum"
+            path: "content/dist/rhel-alt/rhui/server/7/7Server/armv8-a/aarch64/devtools/1/os"
+            id: "rhel-7-server-for-arm-64-devtools-rhui-rpms-aarch64"
+            label: "rhel-7-server-for-arm-64-devtools-rhui-rpms"
+            test_package: "rust-toolset-7-rust-doc"
+    8:
+        x86_64:
+            name: "Red Hat Enterprise Linux 8 for x86_64 - SAP NetWeaver (RPMs) from RHUI"
+            version: "8"
+            kind: "Yum"
+            path: "content/dist/rhel8/rhui/8/x86_64/sap/os"
+            id: "rhel-8-for-x86_64-sap-netweaver-rhui-rpms-8"
+            label: "rhel-8-for-x86_64-sap-netweaver-rhui-rpms"
+            test_package: "compat-locales-sap-common"
+        aarch64:
+            name: "Red Hat Enterprise Linux 8 for ARM 64 - Supplementary (RPMs) from RHUI"
+            version: "8"
+            kind: "Yum"
+            path: "content/dist/rhel8/rhui/8/aarch64/supplementary/os"
+            id: "rhel-8-for-aarch64-supplementary-rhui-rpms-8"
+            label: "rhel-8-for-aarch64-supplementary-rhui-rpms"
+            test_package: "zhongyi-song-fonts"
+    9:
+        x86_64:
+            name: "Red Hat Enterprise Linux 9 for x86_64 - Supplementary (RPMs) from RHUI"
+            version: "9"
+            kind: "Yum"
+            path: "content/dist/rhel9/rhui/9/x86_64/supplementary/os"
+            id: "rhel-9-for-x86_64-supplementary-rhui-rpms-9"
+            label: "rhel-9-for-x86_64-supplementary-rhui-rpms"
+            test_package: "zhongyi-song-fonts"
+        aarch64:
+            name: "Red Hat Enterprise Linux 9 for ARM 64 - Supplementary (RPMs) from RHUI"
+            version: "9"
+            kind: "Yum"
+            path: "content/dist/rhel9/rhui/9/aarch64/supplementary/os"
+            id: "rhel-9-for-aarch64-supplementary-rhui-rpms-9"
+            label: "rhel-9-for-aarch64-supplementary-rhui-rpms"
+            test_package: "zhongyi-song-fonts"
+    10:
+        x86_64:
+            name: "Red Hat Enterprise Linux 10 for x86_64 - Supplementary (RPMs) from RHUI"
+            version: "10"
+            kind: "Yum"
+            path: "content/dist/rhel10/rhui/10/x86_64/supplementary/os"
+            id: "rhel-10-for-x86_64-supplementary-rhui-rpms-10"
+            label: "rhel-10-for-x86_64-supplementary-rhui-rpms"
+            test_package: "java-21-ibm-semeru-certified-jdk-devel"
+        aarch64:
+            name: "Red Hat Enterprise Linux 10 for ARM 64 - Supplementary (RPMs) from RHUI"
+            version: "10"
+            kind: "Yum"
+            path: "content/dist/rhel10/rhui/10/aarch64/supplementary/os"
+            id: "rhel-10-for-aarch64-supplementary-rhui-rpms-10"
+            label: "rhel-10-for-aarch64-supplementary-rhui-rpms"
+            test_package: "java-21-ibm-semeru-certified-jdk-devel"
+sync_policy_repos:
+    8:
+        regular: rhel-8-for-x86_64-sap-netweaver-rhui-rpms-8
+        debug: rhel-8-for-x86_64-sap-netweaver-rhui-debug-rpms-8
+        source: rhel-8-for-x86_64-sap-netweaver-rhui-source-rpms-8
+        test_package: compat-locales-sap
+    9:
+        regular: rhel-9-for-x86_64-sap-netweaver-rhui-rpms-9
+        debug: rhel-9-for-x86_64-sap-netweaver-rhui-debug-rpms-9
+        source: rhel-9-for-x86_64-sap-netweaver-rhui-source-rpms-9
+        test_package: compat-locales-sap
+    10:
+        regular: rhel-10-for-x86_64-sap-netweaver-rhui-rpms-10
+        debug: rhel-10-for-x86_64-sap-netweaver-rhui-debug-rpms-10
+        source: rhel-10-for-x86_64-sap-netweaver-rhui-source-rpms-10
+        test_package: vhostmd
+product:
+    name: "Red Hat Enterprise Linux 8 for x86_64 - SAP Solutions - Extended Update Support from RHUI (RPMs)"
+    ids:
+      - rhel-8-for-x86_64-sap-solutions-eus-rhui-rpms-8.1
+      - rhel-8-for-x86_64-sap-solutions-eus-rhui-rpms-8.2
+      - rhel-8-for-x86_64-sap-solutions-eus-rhui-rpms-8.4
+      - rhel-8-for-x86_64-sap-solutions-eus-rhui-rpms-8.6
+      - rhel-8-for-x86_64-sap-solutions-eus-rhui-rpms-8.8
+status_repos:
+    good: "rhel-sap-for-rhel-7-server-rhui-rpms-7Server-x86_64"
+    bad: "rhel-server-rhscl-6-rhui-source-rpms-6Server-i386"
+subscriptions:
+    RHUI: "Red Hat Update Infrastructure and RHEL Add-Ons for Providers"
+SCA:
+    name: "Content Access"
+    id: "SCA"
+container_primary:
+    name: "rhcertification/redhat-certification"
+    id: "rhcert"
+    displayname: "RH Certification Container"
+container_cli:
+    name: "ubi8-minimal"
+    displayname: "UBI 8 Minimal"
+container_alt:
+    quay:
+        name: "pusher/oauth2_proxy"
+    gitlab:
+        name: "gitlab-org/gitlab-runner/alpine-no-root"
+EUS_repos:
+    8:
+        x86_64:
+            id: "rhel-8-for-x86_64-sap-solutions-e4s-rhui-rpms-8.2"
+            label: "rhel-8-for-x86_64-sap-solutions-e4s-rhui-rpms"
+            path: "content/e4s/rhel8/rhui/8.2/x86_64/sap-solutions/os"
+            test_package: "compat-sap-c++-9"
+        aarch64:
+            id: "rhel-8-for-aarch64-supplementary-eus-rhui-rpms-8.8"
+            label: "rhel-8-for-aarch64-supplementary-eus-rhui-rpms"
+            path: "content/eus/rhel8/rhui/8.8/aarch64/supplementary/os"
+            test_package: "zhongyi-song-fonts"
+    9:
+        x86_64:
+            id: "rhel-9-for-x86_64-sap-solutions-e4s-rhui-rpms-9.0"
+            label: "rhel-9-for-x86_64-sap-solutions-e4s-rhui-rpms"
+            path: "content/e4s/rhel9/rhui/9.0/x86_64/sap-solutions/os"
+            test_package: "vm-dump-metrics"
+        aarch64:
+            id: "rhel-9-for-aarch64-supplementary-eus-rhui-rpms-9.2"
+            label: "rhel-9-for-aarch64-supplementary-eus-rhui-rpms"
+            path: "content/eus/rhel9/rhui/9.2/aarch64/supplementary/os"
+            test_package: "zhongyi-song-fonts"
+    10:
+        x86_64:
+            id: "rhel-10-for-x86_64-sap-solutions-e4s-rhui-rpms-10.0"
+            label: "rhel-10-for-x86_64-sap-solutions-e4s-rhui-rpms"
+            path: "content/e4s/rhel10/rhui/10.0/x86_64/sap-solutions/os"
+            test_package: "vm-dump-metrics"
+        aarch64:
+            id: "rhel-10-for-aarch64-supplementary-eus-rhui-rpms-10.0"
+            label: "rhel-10-for-aarch64-supplementary-eus-rhui-rpms"
+            path: "content/eus/rhel10/rhui/10.0/aarch64/supplementary/os"
+            test_package: "java-21-ibm-semeru-certified-jdk-devel"
+updateinfo:
+    0:
+        all:
+            repo_id: "hts-6"
+    6:
+        x86_64:
+            repo_name: "Red Hat Hardware Certification Test Suite 6"
+            repo_id: "hts-6"
+            test_package: "hwcert-client-info"
+            old_version: "1.6.5.2-20140611.el6"
+            errata: "RHEA-2014:1805"
+    7:
+        x86_64:
+            repo_name: "Red Hat Storage Console Agent 2.0"
+            repo_id: "rhscon-agent-2"
+            test_package: "rhscon-core-selinux"
+            old_version: "0.0.41-1.el7scon"
+            errata: "RHSA-2016:2082"
+    8:
+        x86_64:
+            repo_name: "Simple Errata (from Pulp Demo Repos)"
+            repo_id: "pulp-test_simple_errata"
+            gpg_key: "nokey"
+            test_package: "test-package"
+            old_version: "0.1-1.el6"
+            errata: "RHEA-2010:0001"
+        aarch64:
+            repo_name: "Errata Install (from Pulp Demo Repos)"
+            repo_id: "pulp-test_errata_install"
+            gpg_key: "nokey"
+            test_package: "grinder_test_package"
+            old_version: "2.0-1.fc14"
+            errata: "RHEA-2013:9999"
+    9:
+        x86_64:
+            repo_name: "Zoo (from Pulp Demo Repos)"
+            repo_id: "pulp-test_zoo"
+            gpg_key: "nokey"
+            test_package: "bear"
+            old_version: "4.0-1"
+            errata: "RHEA-2012:0001"
+        aarch64:
+            repo_name: "Zoo (from Pulp Demo Repos)"
+            repo_id: "pulp-test_zoo"
+            gpg_key: "nokey"
+            test_package: "bear"
+            old_version: "4.0-1"
+            errata: "RHEA-2012:0001"
+    10:
+        x86_64:
+            repo_name: "Zoo (from Pulp Demo Repos)"
+            repo_id: "pulp-test_zoo"
+            gpg_key: "nokey"
+            test_package: "bear"
+            old_version: "4.0-1"
+            errata: "RHEA-2012:0001"
+        aarch64:
+            repo_name: "Zoo (from Pulp Demo Repos)"
+            repo_id: "pulp-test_zoo"
+            gpg_key: "nokey"
+            test_package: "bear"
+            old_version: "4.0-1"
+            errata: "RHEA-2012:0001"
+comps:
+    SAP:
+        name: "RHEL for SAP"
+        test_group: "SAP"
+        test_package: "sapconf"
+        test_langpack: "firefox firefox-langpack-%s"
+    Supplementary:
+        name: "Red Hat Enterprise Linux Supplementary"
+        test_group: "Java Browser"
+        test_group_mod: "Misc 2"
+        test_package: "java-1.8.0-ibm-plugin"
+        test_langpack: ""
+    big_repo:
+        id: "BaseOS"
+    no_comps:
+        id: "Ansible"
+    comps_to_zip:
+        id: "CRB"
+remote_content:
+    rpm: "https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/python3-requests-2.25.1-5.el9.noarch.rpm"
+    ftp: "ftp://ftp.fi.muni.cz/pub/linux/redhat/linux/enterprise/2.1AS/en/os/i386/SRPMS/xsnow-1.40-14.src.rpm"
+    html_with_links: "https://repos.fedorapeople.org/pulp/pulp/demo_repos/repo_resync_b/"
+package_versions:
+    test_package: "tuned-profiles-sap"
+repo_versions:
+    test_packages:
+        8:
+            - zlib-1.2.11-10.el8.i686
+            - zlib-1.2.11-13.el8.i686
+            - zlib-1.2.11-16.el8_2.i686
+            - zlib-1.2.11-16.2.el8_3.i686
+            - zlib-1.2.11-17.el8.i686
+            - zlib-1.2.11-20.el8.i686
+        9:
+            - zlib-1.2.11-31.el9.i686
+            - zlib-1.2.11-31.el9_0.1.i686
+            - zlib-1.2.11-32.el9_0.i686
+            - zlib-1.2.11-34.el9.i686
+            - zlib-1.2.11-35.el9_1.i686
+            - zlib-1.2.11-39.el9.i686
+        10:
+            - rv-6.12.0-55.9.1.el10_0.x86_64
+            - rv-6.12.0-55.11.1.el10_0.x86_64
+            - rv-6.12.0-55.12.1.el10_0.x86_64
+            - rv-6.12.0-55.13.1.el10_0.x86_64
+            - rv-6.12.0-55.14.1.el10_0.x86_64
+            - rv-6.12.0-55.16.1.el10_0.x86_64
