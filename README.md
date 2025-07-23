@@ -15,7 +15,7 @@ Contents
 * `deploy/`: Ansible playbooks to set up the individual nodes.
 * `docs/`: Documentation for test modules. Needs Sphinx to build.
 * `scripts/`: Scripts to simplify the deployment even more by creating a cloudformation stack with the individual RHUI 5 nodes and a hosts configuration file to use by Ansible.
-* `tests/`: Test suite (test cases and libraries) to verify the functionality of an installed RHUI 4 environment or check for potential regressions in new RHUI 5 versions.
+* `tests/`: Test suite (test cases and libraries) to verify the functionality of an installed RHUI 5 environment or check for potential regressions in new RHUI 5 versions.
 * `hosts.cfg`: A template for the hosts configuration.
 * `RHEL*mapping.json`: IDs of the latest AMIs. The deployment script uses this data.
 

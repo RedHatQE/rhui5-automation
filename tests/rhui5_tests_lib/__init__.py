@@ -1,4 +1,4 @@
-""" RHUI 4 Testing Library """
+""" RHUI 5 Testing Library """
 
 import logging
 import sys
