@@ -59,32 +59,34 @@
     tty: true
     volume:
       - "/home/{{ unpriv_user }}/.ssh/id_ecdsa_launchpad:/ssh-keyfile:Z"
-    command:
-      - "rhui-installer"
-      - "--target-host"
-      - "rhua.example.com"
-      - "--target-user"
-      - "{{ unpriv_user }}"
-      - "--remote-fs-server"
-      - "nfs.example.com:/export"
-      - "--cds-lb-hostname"
-      - "lb.example.com"
-      - "--rhua-container-registry"
-      - "{{ registry['hostname'] }}"
-      - "--rhua-container-image"
-      - "{{ rhua_image }}"
-      - "--podman-username"
-      - "{{ registry['username'] }}"
-      - "--podman-password"
-      - "{{ registry['password'] }}"
+    command: >
+      rhui-installer
+      --target-user {{ unpriv_user }}
+      {% if mig | default(False) %}
+      --migrate-from-rhui-4
+      {% if toanotherrhua | default(False) %}
+      --source-host rhua.example.com
+      --target-host anotherrhua.example.com
+      {% else %}
+      --target-host rhua.example.com
+      {% endif %}
+      {% else %}
+      --target-host rhua.example.com
+      --remote-fs-server nfs.example.com:/export
+      --cds-lb-hostname lb.example.com
+      {% endif %}
+      --rhua-container-registry {{ registry['hostname'] }}
+      --rhua-container-image {{ rhua_image }}
+      --podman-username {{ registry['username'] }}
+      --podman-password {{ registry['password'] }}
   become: False
   tags: launchpad,reinstall
 
 - name: wait for the RHUA service to start listening on port 443
   wait_for:
-    host: rhua.example.com
+    host: "{{ 'another' if toanotherrhua | default(False) else '' }}rhua.example.com"
     port: 443
-    delay: 10
+    delay: "{{ 45 if mig | default(False) else 10 }}"
   tags: launchpad,reinstall
 
 - name: wait a bit more before checking rhui-manager
@@ -94,7 +96,7 @@
 
 - name: check if rhui-manager can run
   shell: . /root/.bashrc ; rhua rhui-manager --noninteractive status ; true
-  delegate_to: "{{ groups['RHUA'][0] }}"
+  delegate_to: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'][0] }}"
   register: rhuimanagercmd
   tags: launchpad,reinstall
 

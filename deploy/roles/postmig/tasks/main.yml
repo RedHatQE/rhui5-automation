@@ -1,0 +1,23 @@
+# file: roles/postmig/tasks/main.yml
+# run post-migration tasks to complete the migration
+
+- name: migrate CDS nodes
+  command: "{{ rhui_manager }} cds reinstall --all"
+  become_user: rhui
+  tags: postmig
+
+- name: migrate HAProxy nodes
+  command: "{{ rhui_manager }} haproxy reinstall --all"
+  become_user: rhui
+  tags: postmig
+
+- name: get the status after the migration
+  command: "{{ rhui_manager }} status"
+  register: post_status
+  become_user: rhui
+  tags: postmig
+
+- name: print the status after the migration
+  debug:
+    var: post_status.stdout_lines
+  tags: postmig

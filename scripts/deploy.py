@@ -78,6 +78,12 @@ PRS.add_argument("--skip-tags",
                  metavar="tags")
 PRS.add_argument("--extra-vars",
                  help="supply these variables to Ansible")
+PRS.add_argument("--mig",
+                 help="migrate from RHUI 4 to 5",
+                 action="store_true")
+PRS.add_argument("--toanotherrhua",
+                 help="make the migration from RHUI 4 to 5 non-in-place (to another RHUA)",
+                 action="store_true")
 PRS.add_argument("--dry-run",
                  help="only construct and print the ansible-playbook command, do not run it",
                  action="store_true")
@@ -166,6 +172,12 @@ if ARGS.patch:
 
 if ARGS.branch:
     EVARS += " branch=" + ARGS.branch
+
+if ARGS.mig:
+    EVARS += " mig=True"
+
+if ARGS.toanotherrhua:
+    EVARS += " toanotherrhua=True"
 
 if ARGS.extra_vars:
     EVARS += " " + ARGS.extra_vars

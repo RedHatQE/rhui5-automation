@@ -1,0 +1,6 @@
+---
+# file: anotherrhua.yml
+# non-in-place migration rhua playbook
+- hosts: ANOTHERRHUA
+  roles:
+    - anotherrhua

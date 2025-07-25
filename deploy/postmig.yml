@@ -1,0 +1,6 @@
+---
+# file: postmig.yml
+# post-migration playbook
+- hosts: RHUA
+  roles:
+    - postmig

@@ -1,0 +1,6 @@
+---
+# file: roles/anotherrhua/tasks/main.yml
+# tasks related to the non-in-place migration rhua setup
+- name: set hostname
+  hostname: name=anotherrhua.example.com
+  tags: anotherrhua

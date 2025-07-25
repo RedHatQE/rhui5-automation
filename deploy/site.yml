@@ -11,8 +11,12 @@
 
 - import_playbook: filesystem.yml
 - import_playbook: rhua.yml
+- import_playbook: anotherrhua.yml
+  when: mig | default(False) and toanotherrhua | default(False)
 - import_playbook: haproxy.yml
 - import_playbook: cds.yml
 - import_playbook: cli.yml
 - import_playbook: launchpad.yml
 - import_playbook: tests.yml
+- import_playbook: postmig.yml
+  when: mig | default(False) and not toanotherrhua | default(False)

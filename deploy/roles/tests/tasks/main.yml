@@ -52,12 +52,12 @@
 - name: slurp the test pub key
   slurp: src=/root/.ssh/id_ecdsa_test.pub
   register: slurp_id_ecdsa_test
-  tags: tests,xxx
+  tags: tests
 
 - name: set the pub_key as a global fact
   set_fact:
     id_ecdsa_test_pub: "{{ slurp_id_ecdsa_test.content|b64decode|trim + ' ' + 'test.example.com' }}"
-  tags: tests,xxx
+  tags: tests
 
 - name: set authorized keys on all roles except TEST itself to allow root connection with the key
   authorized_key:
@@ -65,28 +65,29 @@
     user: root
     state: present
   delegate_to: "{{ item }}"
-  with_items: "{{ groups['CDS'] + groups['HAPROXY'] + groups['RHUA'] + groups['CLI']|default([]) + groups['LAUNCHPAD'] }}"
-  tags: tests,xxx
+  with_items: "{{ groups['CDS'] + groups['HAPROXY'] + groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'] + groups['CLI']|default([]) + groups['LAUNCHPAD'] }}"
+  tags: tests
   
 - name: upload files containing auxiliary files that might be needed for some tests (e.g. entitlement certificate, RPMs for custom repos) 
   copy:
     src: "{{ extra_files }}"
     dest: /var/lib/rhui/root/test_files/
   delegate_to: "{{ item }}"
-  with_items: "{{ groups['RHUA'] + groups['LAUNCHPAD'] }}"
+  with_items: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'] + groups['LAUNCHPAD'] }}"
   register: upload_extra_files
   tags: tests
   
 - name: set the right SELinux context for the zip
   command: chcon -t container_file_t /var/lib/rhui/root/test_files/{{ extra_files | basename }}
-  delegate_to: "{{ groups['RHUA'][0] }}"
+  delegate_to: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'][0] }}"
   tags: tests,seli
 
 - name: install unzip
   package:
     name: unzip
+    use: "{{ ansible_facts['pkg_mgr'] }}"
   delegate_to: "{{ item }}"
-  with_items: "{{ groups['RHUA'] + groups['LAUNCHPAD'] }}"
+  with_items: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'] + groups['LAUNCHPAD'] }}"
   tags: tests
 
 - name: unzip the test files
@@ -95,7 +96,7 @@
     chdir: /var/lib/rhui/root/test_files/
     creates: /var/lib/rhui/root/test_files/rhcert.pem
   delegate_to: "{{ item }}"
-  with_items: "{{ groups['RHUA'] + groups['LAUNCHPAD'] }}"
+  with_items: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'] + groups['LAUNCHPAD'] }}"
   register: unzip_files
   tags: tests
 
@@ -103,7 +104,7 @@
   shell: 'for f in *.tar; do tar xf $f; done'
   args:
     chdir: /var/lib/rhui/root/test_files/
-  delegate_to: "{{ groups['RHUA'][0] }}"
+  delegate_to: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'][0] }}"
   tags: tests
 
 - name: change the ownership of the unpacked files on the launchpad to the unprivileged user
@@ -124,20 +125,20 @@
     state: present
     use: "{{ ansible_facts['pkg_mgr'] }}"
   delegate_to: "{{ item }}"
-  with_items: "{{ groups['RHUA'] + groups['CDS'] }}"
+  with_items: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'] + groups['CDS'] }}"
   tags: tests
 
 - name: upload Red Hat credentials
   copy:
     src: "{{ credentials }}"
     dest: /var/lib/rhui/root/test_files/credentials.conf
-  delegate_to: "{{ groups['RHUA'][0] }}"
+  delegate_to: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'][0] }}"
   when: credentials is defined
   tags: tests
 
 - name: set the right SELinux context for the credentials
   command: chcon -t container_file_t /var/lib/rhui/root/test_files/credentials.conf
-  delegate_to: "{{ groups['RHUA'][0] }}"
+  delegate_to: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'][0] }}"
   tags: tests,seli
 
 - name: run tests

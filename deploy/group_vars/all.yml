@@ -3,3 +3,4 @@ registry:
   username: "{{ lookup('ini', 'username section=registry file=../../credentials.conf') }}"
   password: "{{ lookup('ini', 'password section=registry file=../../credentials.conf') }}"
   insecure: "{{ lookup('ini', 'insecure section=registry file=../../credentials.conf') }}"
+rhui_manager: podman exec -it rhui5-rhua rhui-manager --noninteractive

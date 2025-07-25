@@ -12,6 +12,12 @@
 {% endif %}
 {% endif %}
 
+{% if 'ANOTHERRHUA' in groups %}
+{% if groups['ANOTHERRHUA']|length > 0 %}
+{{ hostvars[groups['ANOTHERRHUA'][0]]['ansible_all_ipv4_addresses'][0] }} anotherrhua anotherrhua.example.com
+{% endif %}
+{% endif %}
+
 {% if 'NFS' in groups %}
 {% if groups['NFS']|length > 0 %}
 {{ hostvars[groups['NFS'][0]]['ansible_all_ipv4_addresses'][0] }} nfs nfs.example.com

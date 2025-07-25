@@ -46,6 +46,44 @@ Read the usage message from the deployment script to become familiar with it:
 ./scripts/deploy.py --help
 ```
 
+Migration from RHUI 4 to 5
+--------------------------
+The `deploy.py` script can also be used to migrate RHUI 4 to 5: either in-place, or to another RHUA.
+You need a previously installed RHUI 4 stack and its inventory file, plus a new VM serving as the
+launchpad for RHUI 5, and in the case of a migration to another RHUA also such an extra VM.
+Note that rhui4-automation now has the ability to create the stack with a VM reserved as a future
+launchpad and another RHUA (see its `scripts/README.md` file), so you can install RHUI 4 with such
+prepared extra VMs, or you can launch a VM (or two) like one of the RHUI 4 nodes and add one
+hostname to the existing RHUI 4 inventory file under `[LAUNCHPAD]` (and another one under
+`[ANOTHERRHUA]`).
+
+If installing a new RHUI 4 stack, be sure to use the new PostgreSQL version, which is requirement
+for a successful migration; to do so, use the `--new-psql` argument of the RHUI 4 `deploy.py`
+script. If RHUI 4 is already installed with the default PostgreSQL version, you will have to rerun
+the RHUI 4 installer with `--postgresql-version 15` first.
+
+To start an in-place migration, run the RHUI 5 dwployment script with the enriched RHUI 4 inventory
+file with the launchpad hostname and with the `--mig` argument.
+To start a migration to another RHUA, use the further enriched RHUI 4 inventory file with both the
+launchpad and the other RHUA hostnames, and with the `--mig --toanotherrhua` arguments.
+
+> [!IMPORTANT]
+> Because RHUI 4 runs on RHEL 8, you need to run the RHUI 5 `deploy.py` script from a system with
+> Ansible not later than 2.16, ie. e.g. from Fedora 41. Newer Ansible versions cannot control
+> RHEL 8 systems.
+
+> [!NOTE]
+> In-place migrations can not be repeated.
+> Therefore, the deployment script can only be run like this once.
+
+> [!IMPORTANT]
+> Although a stack with a test node can be migrated to RHUI 5 including a new setup of the test
+> node for RHUI 5 testing, non-in-place migrations still use the "rhua.example.com" hostname for
+> the abandoned RHUI 4 RHUA. Conseqently, tests will communicate with the abandoned RHUA by
+> default. To make them communicate with the new RHUA instead, edit `/etc/hosts` on the test node
+> to use the IP address of `anotherrhua.example.com` for `rhua.example.com`. In-place migrations
+> are not affected.
+
 Managed roles
 -------------
 - RHUA

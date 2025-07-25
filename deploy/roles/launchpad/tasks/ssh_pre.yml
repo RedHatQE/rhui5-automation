@@ -30,5 +30,5 @@
     user: "{{ unpriv_user }}"
     state: present
   delegate_to: "{{ item }}"
-  with_items: "{{ groups['CDS']|default([]) + groups['HAPROXY']|default([]) + groups['RHUA']|default([]) + groups['CLI']|default([]) }}"
+  with_items: "{{ groups['CDS']|default([]) + groups['HAPROXY']|default([]) + groups['RHUA']|default([]) + groups['ANOTHERRHUA']|default([]) + groups['CLI']|default([]) }}"
   tags: launchpad
