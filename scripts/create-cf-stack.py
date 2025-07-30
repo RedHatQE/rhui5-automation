@@ -39,6 +39,7 @@ argparser.add_argument('--haproxy-os', help='RHEL version for the HAProxies', ty
 argparser.add_argument('--launchpad-os', help='RHEL version for the launchpad', type=int, default=9)
 argparser.add_argument('--nfs', help='NFS', action='store_const', const=True, default=False)
 argparser.add_argument('--test', help='test machine', action='store_const', const=True, default=False)
+argparser.add_argument('--clone', help='add another RHUA for a future clone test', action='store_const', const=True, default=False)
 argparser.add_argument('--input-conf', default="/etc/rhui_ec2.yaml", help='use supplied yaml config file')
 argparser.add_argument('--output-conf', help='output file')
 argparser.add_argument('--region', default="eu-west-1", help='use specified region')
@@ -146,6 +147,8 @@ if args.test:
     json_dict['Description'] += ", TEST machine"
 if args.nfs:
     json_dict['Description'] += ", NFS"
+if args.clone:
+    json_dict['Description'] += ", another RHUA (for cloning)"
 
 
 fs_type_f = fs_type
@@ -366,6 +369,20 @@ for i in range(1, args.haproxy + 1):
                                          ]},
                    "Type": "AWS::EC2::Instance"}
 
+# clone
+if args.clone:
+    os = "RHEL9"
+    json_dict['Resources']["anotherrhua"] = \
+     {"Properties": {"ImageId": {"Fn::FindInMap": [os, {"Ref": "AWS::Region"}, "AMI"]},
+                               "InstanceType": instance_types["x86_64"],
+                               "KeyName": {"Ref": "KeyName"},
+                               "SecurityGroups": [{"Ref": "RHUIsecuritygroup"}],
+                               "Tags": [{"Key": "Name", "Value": concat_name("anotherrhua")},
+                                         {"Key": "Role", "Value": "ANOTHERRHUA"},
+                                         ]},
+               "Type": "AWS::EC2::Instance"}
+
+
 if not args.novpc:
     # Setting VpcId and SubnetId
     json_dict['Outputs'] = {}
@@ -538,6 +555,17 @@ try:
                         f.write(" ansible_ssh_private_key_file=" + ssh_key)
                     if args.ansible_ssh_extra_args:
                         f.write(f" ansible_ssh_extra_args=\"{args.ansible_ssh_extra_args}\"")
+                    f.write('\n')
+        # another RHUA
+        if args.clone:
+            f.write('\n[ANOTHERRHUA]\n')
+            for role, hostname in hostnames.items():
+                if role == "anotherrhua":
+                    f.write(hostname)
+                    if ssh_key:
+                        f.write(' ansible_ssh_private_key_file=%s' % ssh_key)
+                    if args.ansible_ssh_extra_args:
+                        f.write(' ansible_ssh_extra_args="%s"' % args.ansible_ssh_extra_args)
                     f.write('\n')
 
 except Exception as e:

@@ -50,6 +50,22 @@
   become: False
   tags: launchpad
 
+#- name: remove the directory with test files prior to cloning
+#  file:
+#    path: /var/lib/rhui/root/test_files
+#    state: absent
+#  delegate_to: "{{ groups['RHUA'][0] }}"
+#  when: clone | default(False)
+#  tags: launchpad
+- name: temporarily move the directory with test files prior to cloning
+  command: mv /var/lib/rhui/root/test_files /root/
+  args:
+    creates: /root/test_files
+    removes: /var/lib/rhui/root/test_files
+  delegate_to: "{{ groups['RHUA'][0] }}"
+  when: clone | default(False)
+  tags: launchpad
+
 - name: launch the installer
   containers.podman.podman_container:
     name: rhui_installer_task
@@ -70,6 +86,11 @@
       {% else %}
       --target-host rhua.example.com
       {% endif %}
+      {% elif clone | default(False) %}
+      --clone
+      --source-host rhua.example.com
+      --target-host anotherrhua.example.com
+      --migration-fs-server anotherrhua.example.com:/export
       {% else %}
       --target-host rhua.example.com
       --remote-fs-server nfs.example.com:/export
@@ -93,6 +114,15 @@
   pause:
     minutes: 1
   tags: launchpad,reinstall
+
+- name: move the directory with test files back after cloning
+  command: mv /root/test_files /var/lib/rhui/root/
+  args:
+    creates: /var/lib/rhui/root/test_files
+    removes: /root/test_files
+  delegate_to: "{{ groups['RHUA'][0] }}"
+  when: clone | default(False)
+  tags: launchpad
 
 - name: check if rhui-manager can run
   shell: . /root/.bashrc ; rhua rhui-manager --noninteractive status ; true

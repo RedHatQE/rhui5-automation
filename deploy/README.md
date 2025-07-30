@@ -84,9 +84,36 @@ launchpad and the other RHUA hostnames, and with the `--mig --toanotherrhua` arg
 > to use the IP address of `anotherrhua.example.com` for `rhua.example.com`. In-place migrations
 > are not affected.
 
+RHUI 5 cloning
+--------------
+The RHUI 5 installer can clone an existing RHUA. To test this feature, create a stack with a VM
+reserved as the future clone by using the `--clone` option of the `create-cf-stack.py` script.
+Then deploy RHUI on the stack as usual, ie. using the `deploy.py` script with no special arguments.
+The reserved VM will be left intact at this point, except for editing the `/etc/hosts` file in
+advance, installing vim, and authorizing the launchpad's SSH key. Use the original RHUA as you wish
+before you clone it.
+
+To test the cloning process, rerun the `deploy.py` script with the `--clone` option. The script
+will set the reserved VM up as another RHUA, copy the remote share, and rerun the installer to
+clone the original RHUA to this VM.
+
+> [!IMPORTANT]
+> The clone VM is launched with the default disk size and no special volume is created for the
+> remote share. Consequently, you can only clone a relatively small RHUI environment by default;
+> e.g. with a small test repo. To be able to clone a bigger RHUI environment, add enough disk
+> space to the clone VM first.
+
+> [!IMPORTANT]
+> The test VM will still use the "rhua.example.com" hostname for the tests. Conseqently, tests will
+> communicate with the original RHUA by default. To make them communicate with the cloned RHUA
+> instead, edit `/etc/hosts` on the test VM to use the IP address of `anotherrhua.example.com`
+> for `rhua.example.com`. Alternatively, monkey-patch the `get_rhua_hostname()` method in
+> `rhui5_tests_lib/conmgr.py` to return the cloned RHUA hostname.
+
 Managed roles
 -------------
 - RHUA
+- Another RHUA (optional, if testing the ability to clone the original RHUA)
 - CDSes
 - HAProxy (load balancer)
 - NFS server

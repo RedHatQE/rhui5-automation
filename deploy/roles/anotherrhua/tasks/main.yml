@@ -4,3 +4,51 @@
 - name: set hostname
   hostname: name=anotherrhua.example.com
   tags: anotherrhua
+
+- name: block for the clone
+  block:
+  - name: install nfs-utils
+    package:
+      name: nfs-utils
+      state: present
+
+  - name: create an export directory
+    file:
+      name: /export
+      state: directory
+
+  - name: set up the exports file
+    template:
+      src: ../nfs/templates/exports.j2
+      dest: /etc/exports
+
+  - name: start the nfs-server service
+    service:
+      name: nfs-server
+      state: started
+      enabled: True
+
+  - name: create a mount point
+    file:
+      name: /mnt/old_remote_share
+      state: directory
+
+  - name: mount the old remote share
+    mount:
+      src: nfs.example.com:/export
+      path: /mnt/old_remote_share
+      fstype: nfs
+      state: ephemeral
+
+  - name: copy the remote share
+    copy:
+      src: /mnt/old_remote_share/
+      dest: /export/
+      remote_src: True
+
+  - name: unmount the old remote share
+    mount:
+      path: /mnt/old_remote_share
+      state: unmounted
+  when: clone | default(False) | bool
+  tags: anotherrhua

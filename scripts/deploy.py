@@ -78,6 +78,9 @@ PRS.add_argument("--skip-tags",
                  metavar="tags")
 PRS.add_argument("--extra-vars",
                  help="supply these variables to Ansible")
+PRS.add_argument("--clone",
+                 help="clone the original (previously deployed) RHUI 5 RHUA to another host",
+                 action="store_true")
 PRS.add_argument("--mig",
                  help="migrate from RHUI 4 to 5",
                  action="store_true")
@@ -172,6 +175,12 @@ if ARGS.patch:
 
 if ARGS.branch:
     EVARS += " branch=" + ARGS.branch
+
+if ARGS.clone:
+    # set related options accordingly; note that migrating and cloning are mutually exclusive tasks
+    ARGS.mig = False
+    ARGS.toanotherrhua = True
+    EVARS += " clone=True"
 
 if ARGS.mig:
     EVARS += " mig=True"

@@ -123,6 +123,17 @@ The output configuration file is needed for the RHUI 5 installation orchestrated
 Examples of the output file are in the [deployment README](../deploy/README.md) file,
 or see the [hosts.cfg](../hosts.cfg) file in the parent directory.
 
+### RHUI cloning
+
+The RHUI 5 installer can clone an existing RHUA. To test this feature, create a stack with a VM
+reserved as the future clone by using the `--clone` option of the `create-cf-stack.py` script.
+Then deploy RHUI on the stack; the reserved VM will be left intact at this point. Use the original
+RHUA as you wish.
+
+To test the cloning process, rerun the `deploy.py` script with the `--clone` option. The script
+will set the reserved VM up as another RHUA, copy the remote share, and rerun the installer to
+clone the original RHUA to the other VM.
+
 ### How to delete stack
 
 Stack can be deleted "all in one" with CloudFormation. On the AWS amazon web page go to the
