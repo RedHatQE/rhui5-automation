@@ -75,9 +75,11 @@
 - name: check if rebooting is needed
   command: needs-restarting -r
   register: needs_restarting
-  failed_when: needs_restarting.rc not in [0, 1]
+  # if the comand isn't available, move on, no problem
+  ignore_errors: True
+  tags: upgrade_all_pkg,rhel8_beta,rhel9_beta,rhel10_beta
 
 - name: reboot after updating, if needed
   reboot:
   when: needs_restarting.rc == 1
-  tags: upgrade_all_pkg,rhel8_beta,rhel9_beta
+  tags: upgrade_all_pkg,rhel8_beta,rhel9_beta,rhel10_beta

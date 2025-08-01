@@ -134,6 +134,38 @@ To test the cloning process, rerun the `deploy.py` script with the `--clone` opt
 will set the reserved VM up as another RHUA, copy the remote share, and rerun the installer to
 clone the original RHUA to the other VM.
 
+### Using a non-default AMI for the launchpad
+
+By default, RHEL 9 is used for the launchpad, ie. the node that launches the installation of RHUI.
+You can override the RHEL version with the `--launchpad-os` argument of `create-cf-stack.py`.
+While the supplied value is not checked (it only needs to be an integer), usable values are only
+8, 9, and 10.
+
+Alternatively, you can use an arbitrary operating system available as an AMI in the given AWS
+region. Supply the AMI ID to `create-cf-stack.py` as the `--launchpad-ami` argument. Note that many
+non-RHEL AMIs are built with a login (user) name that differs from what RHEL AMIs use (ec2-user).
+Consequently, you may need to supply the login name to `create-cf-stack.py` as the
+`--launchpad-user` argument. The inventory file will then be created in a way that instructs
+Ansible to use this login name so that in can control the VM. The following table provides several
+examples that are known to work in the summer of 2025:
+
+| OS            | AMI ID in eu-west-1   | login      | notes                                                                                     |
+| ------------- | --------------------- | ---------- | ----------------------------------------------------------------------------------------- |
+| Fedora        | ami-002c5f307df891b6b | fedora     | https://fedoraproject.org/cloud/download#cloud_launch                                     |
+| Ubuntu        | ami-01f23391a59163da9 | ubuntu     | Launch an instance › Quick Start                                                          |
+| Arch Linux    | ami-0bbcd5ac4ff324992 | arch       | http://arch-ami-list.drzee.net/                                                           |
+| Debian        | ami-0fbb72557598f5284 | admin      | Launch an instance › Quick Start                                                          |
+| SUSE Linux    | ami-07a28cc68132fccf1 | (ec2-user) | Launch an instance › Quick Start                                                          |
+| CentOS Stream | ami-0347cdfaa388ed3ce | (ec2-user) | https://www.centos.org/download/aws-images/                                               |
+| Rocky Linux   | ami-068ad13dab1cbc4ec | rocky      | https://aws.amazon.com/marketplace/seller-profile?id=01538adc-2664-49d5-b926-3381dffce12d |
+| Amazon Linux  | ami-0253a7ea84bc17a73 | (ec2-user) | https://www.centos.org/download/aws-images/                                               |
+
+Usage example:
+
+```
+./scripts/create-cf-stack.py --launchpad-ami ami-002c5f307df891b6b --launchpad-user fedora --name rhuifromf42
+```
+
 ### How to delete stack
 
 Stack can be deleted "all in one" with CloudFormation. On the AWS amazon web page go to the

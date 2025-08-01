@@ -2,6 +2,36 @@
 # file: launchpad.yml
 # the configuration of the launchpad and the actual launch of the installer
 - hosts: LAUNCHPAD
+  vars:
+    installer_command: >
+      rhui-installer
+      --target-user {{ unpriv_user }}
+      {% if mig | default(False) %}
+      --migrate-from-rhui-4
+      {% if toanotherrhua | default(False) %}
+      --source-host rhua.example.com
+      --target-host anotherrhua.example.com
+      {% else %}
+      --target-host rhua.example.com
+      {% endif %}
+      {% elif clone | default(False) %}
+      --clone
+      --source-host rhua.example.com
+      --target-host anotherrhua.example.com
+      --migration-fs-server anotherrhua.example.com:/export
+      {% else %}
+      --target-host rhua.example.com
+      --remote-fs-server nfs.example.com:/export
+      --cds-lb-hostname lb.example.com
+      {% endif %}
+      --rhua-container-registry {{ registry['hostname'] }}
+      --rhua-container-image {{ rhua_image }}
+      --podman-username {{ registry['username'] }}
+      --podman-password {{ registry['password'] }}
+    families_that_need_root_for_containers:
+      - Suse
+    distros_that_need_docker:
+      - Amazon
   handlers:
     - import_tasks: roles/common/handlers/main.yml
   roles:

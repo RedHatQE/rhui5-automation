@@ -6,4 +6,5 @@
   package:
     name: vim
     state: present
+  ignore_errors: True
   tags: vim

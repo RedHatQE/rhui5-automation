@@ -3,17 +3,17 @@
 
 - name: generate an SSH key to use for the RHUI nodes
   become: false
-  command: ssh-keygen -m pem -N "" -t ecdsa -f /home/{{ unpriv_user }}/.ssh/id_ecdsa_launchpad creates=/home/{{ unpriv_user }}/.ssh/id_ecdsa_launchpad
+  command: ssh-keygen -m pem -N "" -t ecdsa -f /home/{{ ansible_env.SUDO_USER }}/.ssh/id_ecdsa_launchpad creates=/home/{{ ansible_env.SUDO_USER }}/.ssh/id_ecdsa_launchpad
   #notify: restorecon root ssh
   tags: launchpad
 
 - name: slurp the launchpad public key
-  slurp: src=/home/{{ unpriv_user }}/.ssh/id_ecdsa_launchpad.pub
+  slurp: src=/home/{{ ansible_env.SUDO_USER }}/.ssh/id_ecdsa_launchpad.pub
   register: slurp_pubkey
   tags: launchpad
 
 - name: slurp the launchpad private key
-  slurp: src=/home/{{ unpriv_user }}/.ssh/id_ecdsa_launchpad
+  slurp: src=/home/{{ ansible_env.SUDO_USER }}/.ssh/id_ecdsa_launchpad
   register: slurp_privkey
   tags: launchpad
 

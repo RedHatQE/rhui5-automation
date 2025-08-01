@@ -36,7 +36,9 @@ argparser.add_argument('--cds', help='number of CDSes instances', type=int, defa
 argparser.add_argument('--cds-os', help='RHEL version for the CDSes', type=int, default=9)
 argparser.add_argument('--haproxy', help='number of HAProxies', type=int, default=1)
 argparser.add_argument('--haproxy-os', help='RHEL version for the HAProxies', type=int, default=9)
-argparser.add_argument('--launchpad-os', help='RHEL version for the launchpad', type=int, default=9)
+argparser.add_argument('--launchpad-os', help='RHEL version for the launchpad. Practically only 8+.', type=int, default=9)
+argparser.add_argument('--launchpad-ami', help='AMI ID for the launchpad, to test an arbitrary OS. Must be in the given region, and x86_64.')
+argparser.add_argument('--launchpad-user', help='user (login) name for the launchpad as some OS AMIs might use a name different than RHEL AMIs do.')
 argparser.add_argument('--nfs', help='NFS', action='store_const', const=True, default=False)
 argparser.add_argument('--test', help='test machine', action='store_const', const=True, default=False)
 argparser.add_argument('--clone', help='add another RHUA for a future clone test', action='store_const', const=True, default=False)
@@ -228,8 +230,10 @@ json_dict['Resources'] = \
 
 # launchpad
 if not args.cli_only:
+    image_id = args.launchpad_ami or \
+               {"Fn::FindInMap": [f"RHEL{args.launchpad_os}", {"Ref": "AWS::Region"}, "AMI"]}
     json_dict['Resources']["launchpad"] = \
-     {"Properties": {"ImageId": {"Fn::FindInMap": [f"RHEL{args.launchpad_os}", {"Ref": "AWS::Region"}, "AMI"]},
+     {"Properties": {"ImageId": image_id,
                                "InstanceType": instance_types["x86_64"],
                                "KeyName": {"Ref": "KeyName"},
                                "SecurityGroups": [{"Ref": "RHUIsecuritygroup"}],
@@ -476,6 +480,8 @@ try:
         for role, hostname in hostnames.items():
             if role == "launchpad":
                 f.write(hostname)
+                if args.launchpad_user:
+                    f.write(" ansible_ssh_user=" + args.launchpad_user)
                 if ssh_key:
                     f.write(" ansible_ssh_private_key_file=" + ssh_key)
                 if args.ansible_ssh_extra_args:

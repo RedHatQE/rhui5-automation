@@ -1,0 +1,29 @@
+# file: roles/launchpad/tasks/os_tweaks.yml
+# OS-specific tweaks for the launchpad
+- name: install nfs-utils
+  # it may be needed by tests, not by the installation itself; tests are only supported with RHEL
+  package:
+    name: nfs-utils
+    state: latest
+  when: ansible_os_family == "RedHat"
+  tags: launchpad
+
+- name: block for Arch Linux
+  # https://wiki.archlinux.org/title/Arch_Linux_AMIs_for_Amazon_Web_Services#First_Run
+  block:
+  - name: disable the now-private EC2 repo for Arch Linux
+    replace:
+      path: /etc/pacman.conf
+      regexp: '(\[ec2\]\nSigLevel.*\nServer.*)'
+      replace: |
+        #[ec2]
+        #SigLevel = PackageRequired
+        #Server = https://arch-linux-ami.s3.amazonaws.com/repo/$arch
+
+  - name: initialize the pacman keyring
+    command: pacman-key --init
+
+  - name: reload the default pacman keys
+    command: pacman-key --populate
+  when: ansible_os_family == "Archlinux"
+  tags: launchpad

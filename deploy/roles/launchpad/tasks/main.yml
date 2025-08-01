@@ -9,19 +9,25 @@
 - import_tasks: ssh_pre.yml
   tags: launchpad
 
-- name: install podman
-  package:
-    name: podman
-    state: latest
+- import_tasks: os_tweaks.yml
   tags: launchpad
 
-- name: install nfs-utils
+- name: install a container management tool
   package:
-    name: nfs-utils
+    name: "{{ 'docker' if ansible_distribution in distros_that_need_docker else 'podman' }}"
     state: latest
+    update_cache: True
   tags: launchpad
 
-- name: block for insecure registries
+- name: start docker
+  service:
+    name: docker
+    state: started
+    enabled: True
+  when: ansible_distribution in distros_that_need_docker
+  tags: launchpad
+
+- name: podman block for insecure registries
   block:
   - name: create the directory for container certs
     file:
@@ -35,28 +41,33 @@
       dest: "/etc/containers/certs.d/{{ registry['hostname'] }}/ca.crt"
       remote_src: True
     tags: launchpad
-  when: registry['insecure'] | default(False) | bool
+    register: copyrhcacert
+    ignore_errors: True
+  when: ansible_distribution not in distros_that_need_docker and registry['insecure'] | default(False) | bool
+  tags: launchpad
+
+- name: docker block for insecure registries
+  block:
+  - name: configure docker to treat the registry as insecure
+    copy:
+      content: "{ \"insecure-registries\" : [ \"{{ registry['hostname'] }}\" ] }"
+      dest: /etc/docker/daemon.json
+    register: dockerconfig
+    tags: launchpad
+
+  - name: re/start docker
+    service:
+      name: docker
+      state: "{{ 'restarted' if dockerconfig is changed else 'started' }}"
+    tags: launchpad
+  when: ansible_distribution in distros_that_need_docker and registry['insecure'] | default(False) | bool
   tags: launchpad
 
 - name: enable lingering
-  command: "loginctl enable-linger {{ unpriv_user }}"
+  command: "loginctl enable-linger {{ ansible_env.SUDO_USER }}"
+  when: ansible_distribution not in distros_that_need_docker
   tags: launchpad
 
-- name: log in to the registry
-  containers.podman.podman_login:
-    registry: "{{ registry['hostname'] }}"
-    username: "{{ registry['username'] }}"
-    password: "{{ registry['password'] }}"
-  become: False
-  tags: launchpad
-
-#- name: remove the directory with test files prior to cloning
-#  file:
-#    path: /var/lib/rhui/root/test_files
-#    state: absent
-#  delegate_to: "{{ groups['RHUA'][0] }}"
-#  when: clone | default(False)
-#  tags: launchpad
 - name: temporarily move the directory with test files prior to cloning
   command: mv /var/lib/rhui/root/test_files /root/
   args:
@@ -66,41 +77,51 @@
   when: clone | default(False)
   tags: launchpad
 
-- name: launch the installer
+- name: log in to the registry using podman
+  containers.podman.podman_login:
+    registry: "{{ registry['hostname'] }}"
+    username: "{{ registry['username'] }}"
+    password: "{{ registry['password'] }}"
+    tlsverify: "{{ not registry['insecure'] | default(False) | bool or copyrhcacert is defined and copyrhcacert is success }}"
+  become: "{{ ansible_os_family in families_that_need_root_for_containers }}"
+  when: ansible_distribution not in distros_that_need_docker
+  tags: launchpad
+
+- name: log in to the registry using docker
+  community.docker.docker_login:
+    registry_url: "{{ registry['hostname'] }}"
+    username: "{{ registry['username'] }}"
+    password: "{{ registry['password'] }}"
+  when: ansible_distribution in distros_that_need_docker
+  tags: launchpad
+
+- name: launch the installer using podman
   containers.podman.podman_container:
     name: rhui_installer_task
     image: "{{ registry['hostname'] }}/{{ installer_image }}"
-    rm: true
-    interactive: true
-    tty: true
+    tls_verify: "{{ not registry['insecure'] | default(False) | bool or copyrhcacert is defined and copyrhcacert is success }}"
+    rm: True
+    interactive: True
+    tty: True
     volume:
-      - "/home/{{ unpriv_user }}/.ssh/id_ecdsa_launchpad:/ssh-keyfile:Z"
-    command: >
-      rhui-installer
-      --target-user {{ unpriv_user }}
-      {% if mig | default(False) %}
-      --migrate-from-rhui-4
-      {% if toanotherrhua | default(False) %}
-      --source-host rhua.example.com
-      --target-host anotherrhua.example.com
-      {% else %}
-      --target-host rhua.example.com
-      {% endif %}
-      {% elif clone | default(False) %}
-      --clone
-      --source-host rhua.example.com
-      --target-host anotherrhua.example.com
-      --migration-fs-server anotherrhua.example.com:/export
-      {% else %}
-      --target-host rhua.example.com
-      --remote-fs-server nfs.example.com:/export
-      --cds-lb-hostname lb.example.com
-      {% endif %}
-      --rhua-container-registry {{ registry['hostname'] }}
-      --rhua-container-image {{ rhua_image }}
-      --podman-username {{ registry['username'] }}
-      --podman-password {{ registry['password'] }}
-  become: False
+      - "/home/{{ ansible_env.SUDO_USER }}/.ssh/id_ecdsa_launchpad:/ssh-keyfile:Z"
+    command: "{{ installer_command }}"
+  become: "{{ ansible_os_family in families_that_need_root_for_containers }}"
+  when: ansible_distribution not in distros_that_need_docker
+  tags: launchpad,reinstall
+
+- name: launch the installer using docker
+  community.docker.docker_container:
+    name: rhui_installer_task
+    image: "{{ registry['hostname'] }}/{{ installer_image }}"
+    auto_remove: True
+    interactive: True
+    tty: True
+    network_mode: host
+    volumes:
+      - "/home/{{ ansible_env.SUDO_USER }}/.ssh/id_ecdsa_launchpad:/ssh-keyfile:Z"
+    command: "{{ installer_command }}"
+  when: ansible_distribution in distros_that_need_docker
   tags: launchpad,reinstall
 
 - name: wait for the RHUA service to start listening on port 443
