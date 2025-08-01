@@ -158,7 +158,7 @@ examples that are known to work in the summer of 2025:
 | SUSE Linux    | ami-07a28cc68132fccf1 | (ec2-user) | Launch an instance › Quick Start                                                          |
 | CentOS Stream | ami-0347cdfaa388ed3ce | (ec2-user) | https://www.centos.org/download/aws-images/                                               |
 | Rocky Linux   | ami-068ad13dab1cbc4ec | rocky      | https://aws.amazon.com/marketplace/seller-profile?id=01538adc-2664-49d5-b926-3381dffce12d |
-| Amazon Linux  | ami-0253a7ea84bc17a73 | (ec2-user) | https://www.centos.org/download/aws-images/                                               |
+| Amazon Linux  | ami-0253a7ea84bc17a73 | (ec2-user) | Launch an instance › Quick Start                                                          |
 
 Usage example:
 
