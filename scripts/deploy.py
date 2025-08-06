@@ -53,6 +53,10 @@ PRS.add_argument("--credentials",
                  help="configuration file with credentials",
                  default=join(RHUI_DIR, "credentials.conf"),
                  metavar="file")
+PRS.add_argument("--answers",
+                 help=f"optional answers file; an absolute path, or a file in {RHUI_DIR}, or " \
+                      f"'_' as an alias for anwswers.yaml in {RHUI_DIR}",
+                 metavar="file")
 PRS.add_argument("--tests",
                  help="RHUI test to run",
                  metavar="test name or category")
@@ -128,6 +132,22 @@ if exists(expanduser(ARGS.credentials)):
     EVARS += " credentials=" + ARGS.credentials
 else:
     print(ARGS.credentials + " does not exist, ignoring")
+
+if ARGS.answers:
+    if ARGS.answers.startswith("/"):
+        if exists(ARGS.answers):
+            EVARS += " answers=" + ARGS.answers
+        else:
+            print(ARGS.answers + " does not exist.")
+            sys.exit(1)
+    else:
+        answersfile = "answers.yaml" if ARGS.answers == "_" else ARGS.answers
+        joint = expanduser(join(RHUI_DIR, answersfile))
+        if exists(joint):
+            EVARS += " answers=" + joint
+        else:
+            print(joint + " does not exist.")
+            sys.exit(1)
 
 # provided that the RHEL X Beta string is NOT a URL,
 # see if the configuration contains templates for RHEL Beta baseurls;

@@ -25,6 +25,10 @@ class RHUIInstaller():
         cmd = f"cd /tmp ; sudo -u {SUDO_USER_NAME} " \
               f"podman run --rm " \
               f"-v /home/{SUDO_USER_NAME}/.ssh/id_ecdsa_launchpad:/ssh-keyfile:Z"
+        # if the answers file (still) exists on the launchpad, re-use it, too
+        answers_exist = launchpad.recv_exit_status("test -f /tmp/answers.yaml") == 0
+        if answers_exist:
+            cmd += " -v /tmp/answers.yaml:/answers.yaml:Z"
         if other_volumes:
             for key, value in other_volumes.items():
                 cmd += f" -v {value}:/{key}:Z"

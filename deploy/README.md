@@ -110,6 +110,19 @@ clone the original RHUA to this VM.
 > for `rhua.example.com`. Alternatively, monkey-patch the `get_rhua_hostname()` method in
 > `rhui5_tests_lib/conmgr.py` to return the cloned RHUA hostname.
 
+Supplying an optional answers file
+----------------------------------
+Installation parameters can be passed to the installer via a so-called answers file. Its format
+matches the `/root/.rhui/answers.yaml` file that the RHUI 4 installer saves on RHUI 4 RHUA nodes.
+You can take such a file a supply it to the `deploy.py` script as the value of the `--answers`
+argument. The file can be specified the following ways:
+
+* An absolute path.
+* A file name in your RHUI directory (as defined in `~/.rhui5-automation.cfg`).
+* The underscore character, which is understood as `answers.yaml` in your RHUI directory.
+
+The deployment fails if the `--answers` argument is used with a file that does not exist.
+
 Managed roles
 -------------
 - RHUA

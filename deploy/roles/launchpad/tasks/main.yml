@@ -12,6 +12,20 @@
 - import_tasks: os_tweaks.yml
   tags: launchpad
 
+- name: block for answers
+  block:
+  - name: copy the answers file to the launchpad
+    copy:
+      src: "{{ answers }}"
+      dest: /tmp/answers.yaml
+    become: "{{ ansible_os_family in families_that_need_root_for_containers }}"
+
+  - name: add the answers file to the list of volumes
+    set_fact:
+      installer_volumes: "{{ installer_volumes + ['/tmp/answers.yaml:/answers.yaml:Z'] }}"
+  when: answers is defined
+  tags: launchpad,reinstall
+
 - name: install a container management tool
   package:
     name: "{{ 'docker' if ansible_distribution in distros_that_need_docker else 'podman' }}"
@@ -103,8 +117,7 @@
     rm: True
     interactive: True
     tty: True
-    volume:
-      - "/home/{{ ansible_env.SUDO_USER }}/.ssh/id_ecdsa_launchpad:/ssh-keyfile:Z"
+    volume: "{{ installer_volumes }}"
     command: "{{ installer_command }}"
   become: "{{ ansible_os_family in families_that_need_root_for_containers }}"
   when: ansible_distribution not in distros_that_need_docker
@@ -118,8 +131,7 @@
     interactive: True
     tty: True
     network_mode: host
-    volumes:
-      - "/home/{{ ansible_env.SUDO_USER }}/.ssh/id_ecdsa_launchpad:/ssh-keyfile:Z"
+    volumes: "{{ installer_volumes }}"
     command: "{{ installer_command }}"
   when: ansible_distribution in distros_that_need_docker
   tags: launchpad,reinstall

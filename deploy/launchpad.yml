@@ -3,6 +3,8 @@
 # the configuration of the launchpad and the actual launch of the installer
 - hosts: LAUNCHPAD
   vars:
+    installer_volumes:
+      - "/home/{{ ansible_env.SUDO_USER }}/.ssh/id_ecdsa_launchpad:/ssh-keyfile:Z"
     installer_command: >
       rhui-installer
       --target-user {{ unpriv_user }}
