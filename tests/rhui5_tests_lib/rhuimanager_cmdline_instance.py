@@ -50,12 +50,19 @@ class RHUIManagerCLIInstance():
         cmd = f"rhua rhui-manager {node_type} add " + \
               f"--hostname {hostname} --ssh_user {SUDO_USER_NAME} --keyfile_path {SUDO_USER_KEY}"
 
-        registry, username, password = Config.get_registry_data(connection)
+        registry_data = Config.get_registry_data(connection)
+        registry, username, password = registry_data[:3]
+        default_cds_image = registry_data[5]
+        default_haproxy_image = registry_data[6]
+        default_image = default_cds_image if node_type == "cds" else default_haproxy_image
+
         cmd += f" --container_registry {registry}"
         cmd += f" --registry_username {username}"
         cmd += f" --registry_password {password}"
         if image:
             cmd += f" --container_image {image}"
+        elif default_image:
+            cmd += f" --container_image {default_image}"
         if ssl_crt:
             cmd += f" --user_supplied_ssl_crt {ssl_crt}"
         if ssl_key:

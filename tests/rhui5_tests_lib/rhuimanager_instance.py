@@ -102,10 +102,14 @@ class RHUIManagerInstance():
             Expect.enter(connection, "q")
             time.sleep(5)
             raise InvalidSshKeyPath(SUDO_USER_KEY)
-        registry, username, password = Config.get_registry_data(connection)
+        registry_data = Config.get_registry_data(connection)
+        registry, username, password = registry_data[:3]
+        default_cds_image = registry_data[5]
+        default_haproxy_image = registry_data[6]
+        default_image = default_cds_image if screen == "cds" else default_haproxy_image
         Expect.enter(connection, registry)
         Expect.expect(connection, "Container image")
-        Expect.enter(connection, image)
+        Expect.enter(connection, image or default_image)
         Expect.expect(connection, "Optional username")
         Expect.enter(connection, username)
         Expect.expect(connection, "Password to log")

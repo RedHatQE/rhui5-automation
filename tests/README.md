@@ -88,6 +88,11 @@ username=YOUR_REGISTRY_USERNAME
 password=YOUR_REGISTRY_PASSWORD
 # if the registry uses a self-signed SSL certificate, then:
 insecure=1 
+# optionally, if testing an installer/RHUA/CDS/HAproxy image other than the default one, use:
+installer_image=some/path
+rhua_image=some/path
+cds_image=some/path
+haproxy_image=some/path
 
 [quay]
 username=YOUR_QUAY_USERNAME

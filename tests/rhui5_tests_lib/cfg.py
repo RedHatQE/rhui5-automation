@@ -46,7 +46,11 @@ class Config():
             raise RuntimeError(f"password does not exist inside 'registry' in {CREDS}")
         credentials = [creds_cfg.get("registry", "hostname"),
                        creds_cfg.get("registry", "username"),
-                       creds_cfg.get("registry", "password")]
+                       creds_cfg.get("registry", "password"),
+                       creds_cfg.get("registry", "installer_image", fallback="rhui5/installer"),
+                       creds_cfg.get("registry", "rhua_image", fallback=""),
+                       creds_cfg.get("registry", "cds_image", fallback=""),
+                       creds_cfg.get("registry", "haproxy_image", fallback="")]
         return credentials
 
     @staticmethod
