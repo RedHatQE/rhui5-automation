@@ -27,7 +27,9 @@
       --cds-lb-hostname lb.example.com
       {% endif %}
       --rhua-container-registry {{ registry['hostname'] }}
+      {% if rhua_image is defined %}
       --rhua-container-image {{ rhua_image }}
+      {% endif %}
       --podman-username {{ registry['username'] }}
       --podman-password {{ registry['password'] }}
     families_that_need_root_for_containers:

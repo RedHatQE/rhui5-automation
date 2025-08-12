@@ -35,7 +35,7 @@ PRS.add_argument("--installer-image",
                  default="rhui5/installer")
 PRS.add_argument("--rhua-image",
                  help="RHUA image in the registry",
-                 default="rhui5/rhua")
+                 default=None)
 PRS.add_argument("--rhsm",
                  help="register the RHUA with RHSM",
                  action="store_true")
@@ -112,7 +112,8 @@ CMD = f"ansible-playbook -i {ARGS.inventory} deploy/site.yml --extra-vars '"
 EVARS = "unpriv_user=" + ARGS.unpriv_user if ARGS.unpriv_user else UNPRIV_USER
 
 EVARS += " installer_image=" + ARGS.installer_image
-EVARS += " rhua_image=" + ARGS.rhua_image
+if ARGS.rhua_image:
+    EVARS += " rhua_image=" + ARGS.rhua_image
 
 if ARGS.rhsm:
     EVARS += " rhsm=True"
