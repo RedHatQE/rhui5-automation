@@ -1,11 +1,12 @@
 ---
 # file: roles/anotherrhua/tasks/main.yml
 # tasks related to the non-in-place migration rhua setup
+# and for saving&restoring
 - name: set hostname
   hostname: name=anotherrhua.example.com
   tags: anotherrhua
 
-- name: block for the clone
+- name: block for both cloning and restoring
   block:
   - name: install nfs-utils
     package:
@@ -27,7 +28,11 @@
       name: nfs-server
       state: started
       enabled: True
+  when: clone | default(False) or saveandrestore | default(False)
+  tags: anotherrhua
 
+- name: block for cloning only
+  block:
   - name: create a mount point
     file:
       name: /mnt/old_remote_share
@@ -50,5 +55,5 @@
     mount:
       path: /mnt/old_remote_share
       state: unmounted
-  when: clone | default(False) | bool
+  when: clone | default(False)
   tags: anotherrhua

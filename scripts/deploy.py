@@ -82,6 +82,9 @@ PRS.add_argument("--skip-tags",
                  metavar="tags")
 PRS.add_argument("--extra-vars",
                  help="supply these variables to Ansible")
+PRS.add_argument("--saveandrestore",
+                 help="save the (previously deployed) RHUA image and restore it on another host",
+                 action="store_true")
 PRS.add_argument("--clone",
                  help="clone the original (previously deployed) RHUI 5 RHUA to another host",
                  action="store_true")
@@ -211,9 +214,15 @@ if ARGS.patch:
 if ARGS.branch:
     EVARS += " branch=" + ARGS.branch
 
+if ARGS.saveandrestore:
+    # set related options accordingly as some are mutually exclusive and others may be implied
+    ARGS.clone = ARGS.mig = False
+    ARGS.toanotherrhua = True
+    EVARS += " saveandrestore=True"
+
 if ARGS.clone:
-    # set related options accordingly; note that migrating and cloning are mutually exclusive tasks
-    ARGS.mig = False
+    # set related options accordingly as some are mutually exclusive and others may be implied
+    ARGS.saveandrestore = ARGS.mig = False
     ARGS.toanotherrhua = True
     EVARS += " clone=True"
 

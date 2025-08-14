@@ -1,0 +1,9 @@
+---
+# file: roles/rhua/tasks/save.yml
+# tasks to save the RHUA image
+- name: save the image
+  containers.podman.podman_save:
+    image: rhua
+    dest: /export/rhua-image.tar
+  become_user: rhui
+  tags: rhua,save

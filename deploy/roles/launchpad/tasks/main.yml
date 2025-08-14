@@ -26,6 +26,33 @@
   when: answers is defined
   tags: launchpad,reinstall
 
+- name: block for restoring a saved image
+  block:
+  - name: add the saved image to the list of volumes
+    set_fact:
+        installer_volumes: "{{ installer_volumes + ['/tmp/rhua-image.tar:/rhua-image.tar:Z'] }}"
+
+  - name: mount the remote share
+    mount:
+      src: nfs.example.com:/export
+      path: /mnt
+      fstype: nfs
+      state: ephemeral
+
+  - name: copy the image from the shared file system to the local file system
+    copy:
+      src: /mnt/rhua-image.tar
+      dest: /tmp/
+      remote_src: True
+    become: "{{ ansible_os_family in families_that_need_root_for_containers }}"
+
+  - name: unmount the old remote share
+    mount:
+      path: /mnt
+      state: unmounted
+  when: saveandrestore | default(False)
+  tags: launchpad
+
 - name: install a container management tool
   package:
     name: "{{ 'docker' if ansible_distribution in distros_that_need_docker else 'podman' }}"

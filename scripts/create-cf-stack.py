@@ -41,7 +41,7 @@ argparser.add_argument('--launchpad-ami', help='AMI ID for the launchpad, to tes
 argparser.add_argument('--launchpad-user', help='user (login) name for the launchpad as some OS AMIs might use a name different than RHEL AMIs do.')
 argparser.add_argument('--nfs', help='NFS', action='store_const', const=True, default=False)
 argparser.add_argument('--test', help='test machine', action='store_const', const=True, default=False)
-argparser.add_argument('--clone', help='add another RHUA for a future clone test', action='store_const', const=True, default=False)
+argparser.add_argument('--clone', help='add another RHUA for a future clone or save&restore test', action='store_const', const=True, default=False)
 argparser.add_argument('--input-conf', default="/etc/rhui_ec2.yaml", help='use supplied yaml config file')
 argparser.add_argument('--output-conf', help='output file')
 argparser.add_argument('--region', default="eu-west-1", help='use specified region')
@@ -150,7 +150,7 @@ if args.test:
 if args.nfs:
     json_dict['Description'] += ", NFS"
 if args.clone:
-    json_dict['Description'] += ", another RHUA (for cloning)"
+    json_dict['Description'] += ", another RHUA (for cloning or saving&restoring)"
 
 
 fs_type_f = fs_type

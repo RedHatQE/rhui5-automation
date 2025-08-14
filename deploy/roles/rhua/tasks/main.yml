@@ -4,3 +4,7 @@
 - name: set hostname
   hostname: name=rhua.example.com
   tags: rhua
+
+- import_tasks: save.yml
+  when: saveandrestore | default(False)
+  tags: rhua,save

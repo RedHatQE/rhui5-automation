@@ -12,7 +12,7 @@
 - import_playbook: filesystem.yml
 - import_playbook: rhua.yml
 - import_playbook: anotherrhua.yml
-  when: mig | default(False) and toanotherrhua | default(False) or clone | default(False)
+  when: mig | default(False) and toanotherrhua | default(False) or clone | default(False) or saveandrestore | default(False)
 - import_playbook: haproxy.yml
 - import_playbook: cds.yml
 - import_playbook: cli.yml

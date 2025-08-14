@@ -16,6 +16,10 @@
       {% else %}
       --target-host rhua.example.com
       {% endif %}
+      {% elif saveandrestore | default(False) %}
+      --target-host anotherrhua.example.com
+      --remote-fs-server anotherrhua.example.com:/export
+      --cds-lb-hostname lb.example.com
       {% elif clone | default(False) %}
       --clone
       --source-host rhua.example.com
@@ -26,7 +30,9 @@
       --remote-fs-server nfs.example.com:/export
       --cds-lb-hostname lb.example.com
       {% endif %}
+      {% if not saveandrestore | default(False) %}
       --rhua-container-registry {{ registry['hostname'] }}
+      {% endif %}
       {% if rhua_image is defined %}
       --rhua-container-image {{ rhua_image }}
       {% endif %}

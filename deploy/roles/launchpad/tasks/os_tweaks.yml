@@ -2,6 +2,8 @@
 # OS-specific tweaks for the launchpad
 - name: install nfs-utils
   # it may be needed by tests, not by the installation itself; tests are only supported with RHEL
+  # with the exception of saving&restoring the RHUA, in which case you ought to use RHEL for the
+  # launchpad, or install the right "NFS client package" for your distribution beforehand
   package:
     name: nfs-utils
     state: latest

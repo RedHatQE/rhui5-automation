@@ -110,6 +110,17 @@ clone the original RHUA to this VM.
 > for `rhua.example.com`. Alternatively, monkey-patch the `get_rhua_hostname()` method in
 > `rhui5_tests_lib/conmgr.py` to return the cloned RHUA hostname.
 
+RHUI 5 image saving and restoring
+---------------------------------
+A deployed RHUA container can be "saved" as a snapshot and restored on another VM. To test this
+feature, be sure to have a stack with "another RHUA" as described earlier: simply leverage the
+`--clone` flag on the stack creation script command line first, and deploy RHUI as usual. The other
+VM will be created and mostly left intact (see above). When you wish to save the container and
+restore it on the other VM, rerun the `deploy.py` script with the `--saveandrestore` option.
+
+> [!IMPORTANT]
+> This is not the same as cloning. You will get a clean environment on the new RHUA.
+
 Supplying an optional answers file
 ----------------------------------
 Installation parameters can be passed to the installer via a so-called answers file. Its format
