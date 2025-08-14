@@ -99,6 +99,9 @@ username=YOUR_QUAY_USERNAME
 password=YOUR_QUAY_PASSWORD
 ```
 
+Note: the installer and RHUA images specified here will also be automatically used by
+`./scripts/deploy.py` when installing or updating RHUI, unless overridden on the command line.
+
 Usage
 --------
 To install and test RHUI, run:

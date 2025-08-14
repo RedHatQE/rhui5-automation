@@ -32,7 +32,7 @@ PRS.add_argument("--unpriv-user",
                  metavar="user")
 PRS.add_argument("--installer-image",
                  help="installer image in the registry",
-                 default="rhui5/installer")
+                 default=None)
 PRS.add_argument("--rhua-image",
                  help="RHUA image in the registry",
                  default=None)
@@ -105,15 +105,32 @@ if not exists(ARGS.inventory):
     print(ARGS.inventory + " does not exist.")
     sys.exit(1)
 
+if not exists(expanduser(ARGS.credentials)):
+    print(ARGS.credentials + " does not exist.")
+    sys.exit(1)
+
+IMG_CFG = RawConfigParser()
+IMG_CFG.read(expanduser(ARGS.credentials))
+PRESET_INSTALLER_IMAGE = IMG_CFG.get("registry", "installer_image", fallback=None)
+PRESET_RHUA_IMAGE = IMG_CFG.get("registry", "rhua_image", fallback=None)
+
 # start building the command
 CMD = f"ansible-playbook -i {ARGS.inventory} deploy/site.yml --extra-vars '"
 
 # start building the extra variables
 EVARS = "unpriv_user=" + ARGS.unpriv_user if ARGS.unpriv_user else UNPRIV_USER
 
-EVARS += " installer_image=" + ARGS.installer_image
+if ARGS.installer_image:
+    EVARS += " installer_image=" + ARGS.installer_image
+elif PRESET_INSTALLER_IMAGE:
+    EVARS += " installer_image=" + PRESET_INSTALLER_IMAGE
+else:
+    EVARS += " installer_image=rhui5/installer"
+
 if ARGS.rhua_image:
     EVARS += " rhua_image=" + ARGS.rhua_image
+elif PRESET_RHUA_IMAGE:
+    EVARS += " rhua_image=" + PRESET_RHUA_IMAGE
 
 if ARGS.rhsm:
     EVARS += " rhsm=True"
@@ -129,10 +146,7 @@ if exists(expanduser(ARGS.extra_files)):
 else:
     print(ARGS.extra_files + " does not exist, ignoring")
 
-if exists(expanduser(ARGS.credentials)):
-    EVARS += " credentials=" + ARGS.credentials
-else:
-    print(ARGS.credentials + " does not exist, ignoring")
+EVARS += " credentials=" + ARGS.credentials
 
 if ARGS.answers:
     if ARGS.answers.startswith("/"):

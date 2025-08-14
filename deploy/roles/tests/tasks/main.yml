@@ -134,12 +134,12 @@
     dest: /var/lib/rhui/root/test_files/credentials.conf
   delegate_to: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'][0] }}"
   when: credentials is defined
-  tags: tests
+  tags: tests,reinstall
 
 - name: set the right SELinux context for the credentials
   command: chcon -t container_file_t /var/lib/rhui/root/test_files/credentials.conf
   delegate_to: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'][0] }}"
-  tags: tests,seli
+  tags: tests,seli,reinstall
 
 - name: run tests
   command: "rhuitests {{ tests }} quiet"
