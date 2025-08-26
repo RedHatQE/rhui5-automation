@@ -121,6 +121,7 @@ class Helpers():
         # this method purges the legacy CA dir on a CDS
         Expect.expect_retval(connection, f"cds rm -rf {LEGACY_CA_DIR}")
         Config.set_rhui_tools_conf(connection, "rhui", "log_level", "INFO", False)
+        Expect.expect_retval(connection, "cds yum -y install logrotate")
         Expect.expect_retval(connection, "cds logrotate -f /etc/logrotate.d/nginx")
         Expect.expect_retval(connection, "cds rhui-services-restart")
 
