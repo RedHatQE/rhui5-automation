@@ -156,13 +156,15 @@ class Util():
         poolmgr = urllib3.PoolManager(cert_reqs="CERT_REQUIRED", ca_certs=certifi.where())
         try:
             request = poolmgr.request("GET", url)
+            content = request.data.decode()
+            rpmlinks = re.findall(r"<a href=\"[^\"]*\.rpm", content)
+            rpms = [rpmlink.replace("<a href=\"", "") for rpmlink in rpmlinks]
         except (urllib3.exceptions.SSLError, urllib3.exceptions.MaxRetryError):
             # if the URL can't be reached, consider it an empty page
-            return []
-        content = request.data.decode()
-        rpmlinks = re.findall(r"<a href=\"[^\"]*\.rpm", content)
-        rpms = [rpmlink.replace("<a href=\"", "") for rpmlink in rpmlinks]
-        return rpms
+            rpms = []
+        if rpms:
+            return rpms
+        raise RuntimeError("No RPMs found!")
 
     @staticmethod
     def check_package_url(connection, package, path=""):
