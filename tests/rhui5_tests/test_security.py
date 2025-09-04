@@ -4,6 +4,7 @@ import csv
 import logging
 from os.path import basename
 import subprocess
+import time
 
 import nose
 import requests
@@ -93,6 +94,8 @@ def test_04_haproxy_stats():
     # for RHBZ#1718066
     # make sure nc is installed first
     Expect.expect_retval(HAPROXY, "ha yum -y install nc")
+    # yet wait a little longer before actually checking the stats
+    time.sleep(7)
     cmd = "cd /tmp ; echo 'show stat' | " \
           "sudo -u rhui podman exec -it " \
           "rhui5-haproxy timeout 3 nc -U /var/lib/haproxy/stats | " \
