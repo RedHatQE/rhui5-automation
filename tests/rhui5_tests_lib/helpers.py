@@ -1,6 +1,6 @@
 """Helper Functions for RHUI Test Cases"""
 
-from os.path import basename, join
+from os.path import basename
 import time
 
 from stitches.expect import Expect
@@ -41,16 +41,6 @@ class Helpers():
     def check_mountpoint(connection, mountpoint):
         """check if something is mounted in the given directory"""
         return connection.recv_exit_status(f"mountpoint {mountpoint}") == 0
-
-    @staticmethod
-    def encode_sos_command(command, plugin="rhui"):
-        """replace special characters with safe ones and compose the path in the archive"""
-        # spaces become underscores
-        # slashes become dots
-        command = command.replace(" ", "_")
-        command = command.replace("/", ".")
-        # the actual file is in the /commands directory in the archive
-        return join("/sos_commands", plugin, command)
 
     @staticmethod
     def is_registered(connection):
