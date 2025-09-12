@@ -158,42 +158,26 @@ fs_type_f = fs_type
 if fs_type_f == "rhua":
     fs_type_f = "nfs"
 
-json_dict['Mappings'] = {"RHEL7": {args.region: {}},
-                         "RHEL8": {args.region: {}},
-                         "RHEL9": {args.region: {}},
-                         "RHEL10": {args.region: {}}}
+cli_os_versions = (7, 8, 9, 10)
+
+json_dict['Mappings'] = {f"RHEL{i}": {args.region: {}} for i in cli_os_versions}
 
 try:
-    if args.ami_7_override:
-        json_dict['Mappings']['RHEL7'][args.region]['AMI'] = args.ami_7_override
-    else:
-        with open("RHEL7mapping.json") as mjson:
-            rhel7mapping = json.load(mjson)
-            json_dict['Mappings']['RHEL7'] = rhel7mapping
-
-    if args.ami_8_override:
-        json_dict['Mappings']['RHEL8'][args.region]['AMI'] = args.ami_8_override
-    else:
-        with open("RHEL8mapping.json") as mjson:
-            rhel8mapping = json.load(mjson)
-            json_dict['Mappings']['RHEL8'] = rhel8mapping
-
-    if args.ami_9_override:
-        json_dict['Mappings']['RHEL9'][args.region]['AMI'] = args.ami_9_override
-    else:
-        with open("RHEL9mapping.json") as mjson:
-            rhel9mapping = json.load(mjson)
-            json_dict['Mappings']['RHEL9'] = rhel9mapping
-
-    if args.ami_10_override:
-        json_dict['Mappings']['RHEL10'][args.region]['AMI'] = args.ami_10_override
-    else:
-        with open("RHEL10mapping.json") as mjson:
-            rhel10mapping = json.load(mjson)
-            json_dict['Mappings']['RHEL10'] = rhel10mapping
-
+    for i in cli_os_versions:
+        if override := getattr(args, f"ami_{i}_override"):
+            json_dict["Mappings"][f"RHEL{i}"][args.region]["AMI"] = override
+        else:
+            with open(f"RHEL{i}mapping.json") as mjson:
+                mapping = json.load(mjson)
+                json_dict["Mappings"][f"RHEL{i}"] = mapping
+except FileNotFoundError:
+    sys.stderr.write("Missing mapping file")
+    sys.exit(1)
+except json.JSONDecodeError:
+    sys.stderr.write("Bad JSON")
+    sys.exit(1)
 except Exception as e:
-    sys.stderr.write(f"Got '{e}' error \n")
+    sys.stderr.write(f"Got '{e}' error")
     sys.exit(1)
 
 def concat_name(node='', cfgfile=False):
@@ -286,16 +270,12 @@ for i in range(1, args.cds + 1):
                "Type": "AWS::EC2::Instance"}
 
 # clients
-os_dict = {7: "RHEL7", 8: "RHEL8", 9: "RHEL9", 10: "RHEL10"}
-for i in (7, 8, 9, 10):
-    num_cli_ver = args.__getattribute__(f"cli{i}")
-    if num_cli_ver:
-        os = os_dict[i]
+for i in cli_os_versions:
+    if num_cli_ver := getattr(args, f"cli{i}"):
+        os = f"RHEL{i}"
         for j in range(1, num_cli_ver + 1):
             try:
-                cli_arch = args.__getattribute__(f"cli{i}_arch").split(",")[j-1]
-                if not cli_arch:
-                    cli_arch = "x86_64"
+                cli_arch = getattr(args, f"cli{i}_arch").split(",")[j-1] or "x86_64"
             except (AttributeError, IndexError):
                 cli_arch = "x86_64"
             try:
