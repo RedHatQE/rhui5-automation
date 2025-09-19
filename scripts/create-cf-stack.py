@@ -1,6 +1,6 @@
-#! /usr/bin/python -tt
-
+#!/usr/bin/python3
 """ Create CloudFormation stack """
+# pylint: disable=C0301,C0103,W0718
 
 import os
 import socket
@@ -97,7 +97,7 @@ if args.novpc:
     instance_types["x86_64"] = "m3.large"
 
 try:
-    with open(args.input_conf, 'r') as confd:
+    with open(args.input_conf, encoding="utf-8") as confd:
         valid_config = yaml.safe_load(confd)
 
     if "ssh" in valid_config.keys() and REGION in valid_config["ssh"].keys():
@@ -110,10 +110,11 @@ try:
         ssh_key = "~/.ssh/id_rsa_" + ec2_name
     if not args.novpc:
         (vpcid, subnetid) = (args.vpcid, args.subnetid) if args.vpcid else valid_config["vpc"][REGION]
-
-except Exception as e:
-    logging.error(f"got '{e}' error processing: {args.input_conf}")
-    logging.error("Please, check your config or and try again")
+except FileNotFoundError:
+    sys.stderr.write("Missing configuration file")
+    sys.exit(1)
+except yaml.parser.ParserError:
+    sys.stderr.write("Bad YAML")
     sys.exit(1)
 
 json_dict = {}
@@ -167,7 +168,7 @@ try:
         if override := getattr(args, f"ami_{i}_override"):
             json_dict["Mappings"][f"RHEL{i}"][args.region]["AMI"] = override
         else:
-            with open(f"RHEL{i}mapping.json") as mjson:
+            with open(f"RHEL{i}mapping.json", encoding="utf-8") as mjson:
                 mapping = json.load(mjson)
                 json_dict["Mappings"][f"RHEL{i}"] = mapping
 except FileNotFoundError:
@@ -181,6 +182,7 @@ except Exception as e:
     sys.exit(1)
 
 def concat_name(node='', cfgfile=False):
+    """concatenate several properties to give a name to the inventory file"""
     return '_'.join(filter(None,
                            ['hosts' if cfgfile else ec2_name,
                             fs_type_f,
@@ -228,7 +230,7 @@ if not args.cli_only:
 
 # nfs == rhua
 # add a 100 GB volume for RHUI repos if using NFS
-if (fs_type == "rhua"):
+if fs_type == "rhua":
     json_dict['Resources']["rhua"] = \
      {"Properties": {"ImageId": {"Fn::FindInMap": [f"RHEL{args.rhua_os}", {"Ref": "AWS::Region"}, "AMI"]},
                                "InstanceType": instance_types["x86_64"],
@@ -281,7 +283,7 @@ for i in cli_os_versions:
             try:
                 instance_type = instance_types[cli_arch] if i >= 7 else 'm3.large' if args.novpc else 'i3.large'
             except KeyError:
-                logging.error(f"Unknown architecture: {cli_arch}")
+                logging.error("Unknown architecture: %s", cli_arch)
                 sys.exit(1)
             if cli_arch == "x86_64":
                 image_id = {"Fn::FindInMap": [os, {"Ref": "AWS::Region"}, "AMI"]}
@@ -297,9 +299,9 @@ for i in cli_os_versions:
                 elif i == 10 and args.ami_10_arm64_override:
                     image_id = args.ami_10_arm64_override
                 else:
-                    with open(f"RHEL{i}mapping_{cli_arch}.json") as mjson:
-                       image_ids =  json.load(mjson)
-                       image_id = image_ids[args.region]["AMI"]
+                    with open(f"RHEL{i}mapping_{cli_arch}.json", encoding="utf-8") as mjson:
+                        image_ids =  json.load(mjson)
+                        image_id = image_ids[args.region]["AMI"]
             json_dict['Resources'][f"cli{i}nr{j}"] = \
                 {"Properties": {"ImageId": image_id,
                                    "InstanceType": instance_type,
@@ -309,9 +311,9 @@ for i in cli_os_versions:
                                              {"Key": "Role", "Value": "CLI"},
                                              {"Key": "OS", "Value": os}]},
                    "Type": "AWS::EC2::Instance"}
-                   
+
 # nfs
-if (fs_type == "nfs"):
+if fs_type == "nfs":
     json_dict['Resources']["nfs"] = \
      {"Properties": {"ImageId": {"Fn::FindInMap": [f"RHEL{args.rhua_os}", {"Ref": "AWS::Region"}, "AMI"]},
                                "InstanceType": instance_types["x86_64"],
@@ -391,7 +393,7 @@ json_dict['Outputs'] = {}
 json_body = json.dumps(json_dict, indent=4)
 
 STACK_ID = f"STACK-{ec2_name}-{args.name}-{''.join(random.choice(string.ascii_lowercase) for x in range(10))}"
-logging.info("Creating stack with ID " + STACK_ID)
+logging.info("Creating stack with ID %s", STACK_ID)
 
 parameters = [{"ParameterKey": "KeyName", "ParameterValue": ssh_key_name}]
 
@@ -422,10 +424,10 @@ while not is_complete:
         is_complete = True
         success = True
     elif status in ("ROLLBACK_IN_PROGRESS", "ROLLBACK_COMPLETE"):
-        logging.info(f"Stack creation failed: {status}")
+        logging.info("Stack creation failed: %s", status)
         is_complete = True
     else:
-        logging.error(f"Unexpected stack status: {status}")
+        logging.error("Unexpected stack status: %s", status)
         break
 
 if not success:
@@ -454,7 +456,7 @@ else:
     outfile = concat_name(cfgfile=True)
 
 try:
-    with open(outfile, 'w') as f:
+    with open(outfile, "w", encoding="utf-8") as f:
         # launchpad
         f.write('[LAUNCHPAD]\n')
         for role, hostname in hostnames.items():
@@ -507,7 +509,7 @@ try:
                 if ssh_key:
                     f.write(" ansible_ssh_private_key_file=" + ssh_key)
                 if args.ansible_ssh_extra_args:
-                        f.write(f" ansible_ssh_extra_args=\"{args.ansible_ssh_extra_args}\"")
+                    f.write(f" ansible_ssh_extra_args=\"{args.ansible_ssh_extra_args}\"")
                 f.write('\n')
         # haproxy
         f.write('\n[HAPROXY]\n')
@@ -549,13 +551,13 @@ try:
                 if role == "anotherrhua":
                     f.write(hostname)
                     if ssh_key:
-                        f.write(' ansible_ssh_private_key_file=%s' % ssh_key)
+                        f.write(" ansible_ssh_private_key_file=" + ssh_key)
                     if args.ansible_ssh_extra_args:
-                        f.write(' ansible_ssh_extra_args="%s"' % args.ansible_ssh_extra_args)
+                        f.write(f" ansible_ssh_extra_args=\"{args.ansible_ssh_extra_args}\"")
                     f.write('\n')
 
 except Exception as e:
-    logging.error(f"got '{e}' error processing: {args.output_conf}")
+    logging.error("got '%s' error processing: %s", e, args.output_conf)
     sys.exit(1)
 
 print("Instance IDs:")
