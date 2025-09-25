@@ -166,6 +166,11 @@ Usage example:
 ./scripts/create-cf-stack.py --launchpad-ami ami-002c5f307df891b6b --launchpad-user fedora --name rhuifromf42
 ```
 
+### RHUI-in-a-box
+RHUI can be deployed in a special mode where the CDS container is running together with the RHUA
+container on the RHUA node, and no dedicated CDS and HAProxy VMs are needed. To launch only the VMs
+for the launchpad and the RHUA, use the `--boxed` argument of the stack creation script.
+
 ### How to delete stack
 
 Stack can be deleted "all in one" with CloudFormation. On the AWS amazon web page go to the

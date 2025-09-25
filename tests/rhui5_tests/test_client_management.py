@@ -321,7 +321,7 @@ class TestClient():
         Expect.expect_retval(CLI, "yum clean all ; yum -v repolist enabled")
         Expect.expect_retval(CDS,
                              f"egrep 'Found file {LEGACY_CA_DIR}/{LEGACY_CA_FILE}' " +
-                             "/var/lib/rhui/log/gunicorn-auth.log")
+                             "/var/lib/rhui/cds/log/gunicorn-auth.log")
 
     def test_99_cleanup(self):
         '''

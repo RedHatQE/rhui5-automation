@@ -6,7 +6,7 @@ from stitches.expect import Expect
 
 RHUI_CFG_STATIC = "/etc/rhui-static/rhui-tools-static.conf"
 RHUI_CFG_CUSTOM = "/etc/rhui/rhui-tools.conf"
-RHUI_CFG_HOST = "/var/lib/rhui/config/rhu?/rhui-tools.conf"
+RHUI_CFG_HOST = "/var/lib/rhui/*/*/rhui-tools.conf"
 RHUI_CFG_HOST_BAK_DIR = "/var/lib/rhui/root"
 
 RHUI_ROOT = "/var/lib/rhui/remote_share"

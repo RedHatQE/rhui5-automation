@@ -55,7 +55,7 @@ PRS.add_argument("--credentials",
                  metavar="file")
 PRS.add_argument("--answers",
                  help=f"optional answers file; an absolute path, or a file in {RHUI_DIR}, or " \
-                      f"'_' as an alias for anwswers.yaml in {RHUI_DIR}",
+                      f"'_' as an alias for answers.yaml in {RHUI_DIR}",
                  metavar="file")
 PRS.add_argument("--tests",
                  help="RHUI test to run",
@@ -93,6 +93,10 @@ PRS.add_argument("--mig",
                  action="store_true")
 PRS.add_argument("--toanotherrhua",
                  help="make the migration from RHUI 4 to 5 non-in-place (to another RHUA)",
+                 action="store_true")
+PRS.add_argument("--boxed",
+                 help="prepare for a 'RHUI-in-a-box' deployment - RHUA and CDS on the same host; \
+                       still requires an answers file with cds_combo: True (see `--answers')",
                  action="store_true")
 PRS.add_argument("--dry-run",
                  help="only construct and print the ansible-playbook command, do not run it",
@@ -150,6 +154,13 @@ else:
     print(ARGS.extra_files + " does not exist, ignoring")
 
 EVARS += " credentials=" + ARGS.credentials
+
+if ARGS.boxed:
+    # set related options accordingly as some are mutually exclusive and others may be implied
+    ARGS.clone = ARGS.mig = False
+    if not ARGS.answers:
+        ARGS.answers = "_"
+    EVARS += " boxed=True"
 
 if ARGS.answers:
     if ARGS.answers.startswith("/"):

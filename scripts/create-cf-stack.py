@@ -36,6 +36,7 @@ argparser.add_argument('--cds', help='number of CDSes instances', type=int, defa
 argparser.add_argument('--cds-os', help='RHEL version for the CDSes', type=int, default=9)
 argparser.add_argument('--haproxy', help='number of HAProxies', type=int, default=1)
 argparser.add_argument('--haproxy-os', help='RHEL version for the HAProxies', type=int, default=9)
+argparser.add_argument('--boxed', help='RHUI-in-a-box', action='store_const', const=True, default=False)
 argparser.add_argument('--launchpad-os', help='RHEL version for the launchpad. Practically only 8+.', type=int, default=9)
 argparser.add_argument('--launchpad-ami', help='AMI ID for the launchpad, to test an arbitrary OS. Must be in the given region, and x86_64.')
 argparser.add_argument('--launchpad-user', help='user (login) name for the launchpad as some OS AMIs might use a name different than RHEL AMIs do.')
@@ -88,7 +89,10 @@ if args.cli_all:
 
 if args.cli_only:
     args.launchpad_os = args.cds = args.haproxy = 0
-    fs_type = ''
+    fs_type = ""
+
+if args.boxed:
+    args.cds = args.haproxy = 0
 
 if (args.vpcid and not args.subnetid) or (args.subnetid and not args.vpcid):
     logging.error("vpcid and subnetid parameters should be set together!")
@@ -137,7 +141,7 @@ if args.cli10 == -1:
     args.cli10 = len(instance_types)
     args.cli10_arch = ",".join(instance_types.keys())
 
-json_dict['Description'] = "Client-only stack" if args.cli_only else f"RHUI with {args.cds} CDS and {args.haproxy} HAProxy nodes"
+json_dict['Description'] = "Client-only stack" if args.cli_only else "RHUI-in-a-box" if args.boxed else f"RHUI with {args.cds} CDS and {args.haproxy} HAProxy nodes"
 if args.cli7 > 0:
     json_dict['Description'] += f", {args.cli7} RHEL7 client" + ("s" if args.cli7 > 1 else "")
 if args.cli8 > 0:
@@ -194,25 +198,18 @@ json_dict['Parameters'] = \
 {"KeyName": {"Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
               "Type": "String"}}
 
-json_dict['Resources'] = \
+ports = [22, 443, 2049, 3128]
+if args.boxed:
+    ports.append(8443)
+
+sgingress = [{"CidrIp": "0.0.0.0/0",
+              "FromPort": port,
+              "ToPort": port,
+              "IpProtocol": "tcp"} for port in ports]
+json_dict["Resources"] = \
 {"RHUIsecuritygroup": {"Properties": {"GroupDescription": "RHUI security group",
-                                        "SecurityGroupIngress": [{"CidrIp": "0.0.0.0/0",
-                                                                   "FromPort": "22",
-                                                                   "IpProtocol": "tcp",
-                                                                   "ToPort": "22"},
-                                                                   {"CidrIp": "0.0.0.0/0",
-                                                                   "FromPort": "443",
-                                                                   "IpProtocol": "tcp",
-                                                                   "ToPort": "443"},
-                                                                   {"CidrIp": "0.0.0.0/0",
-                                                                   "FromPort": "2049",
-                                                                   "IpProtocol": "tcp",
-                                                                   "ToPort": "2049"},
-                                                                   {"CidrIp": "0.0.0.0/0",
-                                                                   "FromPort": "3128",
-                                                                   "IpProtocol": "tcp",
-                                                                   "ToPort": "3128"}]},
-                        "Type": "AWS::EC2::SecurityGroup"}}
+                                      "SecurityGroupIngress": sgingress},
+                       "Type": "AWS::EC2::SecurityGroup"}}
 
 # launchpad
 if not args.cli_only:
@@ -502,26 +499,27 @@ try:
                         f.write(f" ansible_ssh_extra_args=\"{args.ansible_ssh_extra_args}\"")
                     f.write('\n')
         # cdses
-        f.write('\n[CDS]\n')
-        for role, hostname in hostnames.items():
-            if role.startswith("cds"):
-                f.write(hostname)
-                if ssh_key:
-                    f.write(" ansible_ssh_private_key_file=" + ssh_key)
-                if args.ansible_ssh_extra_args:
-                    f.write(f" ansible_ssh_extra_args=\"{args.ansible_ssh_extra_args}\"")
-                f.write('\n')
+        if args.cds:
+            f.write('\n[CDS]\n')
+            for role, hostname in hostnames.items():
+                if role.startswith("cds"):
+                    f.write(hostname)
+                    if ssh_key:
+                        f.write(" ansible_ssh_private_key_file=" + ssh_key)
+                    if args.ansible_ssh_extra_args:
+                        f.write(f" ansible_ssh_extra_args=\"{args.ansible_ssh_extra_args}\"")
+                    f.write('\n')
         # haproxy
-        f.write('\n[HAPROXY]\n')
-        for role, hostname in hostnames.items():
-            if role.startswith("haproxy"):
-                f.write(hostname)
-                if ssh_key:
-                    f.write(" ansible_ssh_private_key_file=" + ssh_key)
-                if args.ansible_ssh_extra_args:
-                    f.write(f" ansible_ssh_extra_args=\"{args.ansible_ssh_extra_args}\"")
-                f.write('\n')
-
+        if args.haproxy:
+            f.write('\n[HAPROXY]\n')
+            for role, hostname in hostnames.items():
+                if role.startswith("haproxy"):
+                    f.write(hostname)
+                    if ssh_key:
+                        f.write(" ansible_ssh_private_key_file=" + ssh_key)
+                    if args.ansible_ssh_extra_args:
+                        f.write(f" ansible_ssh_extra_args=\"{args.ansible_ssh_extra_args}\"")
+                    f.write('\n')
         # cli
         if args.cli7 or args.cli8 or args.cli9 or args.cli10:
             f.write('\n[CLI]\n')

@@ -134,6 +134,20 @@ argument. The file can be specified the following ways:
 
 The deployment fails if the `--answers` argument is used with a file that does not exist.
 
+RHUI-in-a-box
+-------------
+As described in the README file for the stack creation script, a compact RHUI environment with
+a single VM for the RHUA and CDS containers can exist. To run this deployment, you need an answers
+file with `cds_combo: True`. If you have `answers.yaml` with this option in your RHUI directory,
+no special argument for the answers file is needed. Or you can create such an answers file with any
+name and specify it as described above. Either way, the `--boxed` argument is needed on the
+`deploy.py` command line.
+
+> [!IMPORTANT]
+> The test suite can not run in this environment, unless you skip the steps that work with CDS
+> and/or HAProxy nodes. However, you can add or create repos, build configuration RPMs and install
+> them on client VMs, and you _should_ get content.
+
 Managed roles
 -------------
 - RHUA
