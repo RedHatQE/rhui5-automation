@@ -163,16 +163,16 @@
   when: ansible_distribution in distros_that_need_docker
   tags: launchpad,reinstall
 
-- name: wait for the RHUA service to start listening on port 443
+- name: wait for the RHUA service to start listening on its API port
   wait_for:
     host: "{{ 'another' if toanotherrhua | default(False) else '' }}rhua.example.com"
-    port: 443
+    port: "{{ 8443 if boxed | default(False) else 443 }}"
     delay: "{{ 45 if mig | default(False) else 10 }}"
   tags: launchpad,reinstall
 
 - name: wait a bit more before checking rhui-manager
   pause:
-    minutes: 1
+    minutes: "{{ 2 if boxed | default(False) else 1 }}"
   tags: launchpad,reinstall
 
 - name: move the directory with test files back after cloning
@@ -193,6 +193,11 @@
 - name: print the output from rhui-manager
   debug:
     var: rhuimanagercmd.stdout_lines
+  tags: launchpad,reinstall
+
+- name: print any error output from rhui-manager
+  debug:
+    var: rhuimanagercmd.stderr_lines
   tags: launchpad,reinstall
 
 - import_tasks: ssh_post.yml
