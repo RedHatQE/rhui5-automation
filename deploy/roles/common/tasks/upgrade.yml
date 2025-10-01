@@ -66,20 +66,20 @@
     state: latest
     update_cache: yes
     update_only: yes
-  when: (upgrade_all_pkg | default(False) | bool) or
+  when: (update | default(False) | bool) or
         (rhel8_beta_baseurl is defined and ansible_os_family == "RedHat" and ansible_distribution_major_version|int == 8) or
         (rhel9_beta_baseurl is defined and ansible_os_family == "RedHat" and ansible_distribution_major_version|int == 9) or
         (rhel10_beta_baseurl is defined and ansible_os_family == "RedHat" and ansible_distribution_major_version|int == 10)
-  tags: upgrade_all_pkg,rhel8_beta,rhel9_beta,rhel10_beta
+  tags: update,rhel8_beta,rhel9_beta,rhel10_beta
 
 - name: check if rebooting is needed
   command: needs-restarting -r
   register: needs_restarting
   # if the comand isn't available, move on, no problem
   ignore_errors: True
-  tags: upgrade_all_pkg,rhel8_beta,rhel9_beta,rhel10_beta
+  tags: update,rhel8_beta,rhel9_beta,rhel10_beta
 
 - name: reboot after updating, if needed
   reboot:
   when: needs_restarting.rc == 1
-  tags: upgrade_all_pkg,rhel8_beta,rhel9_beta,rhel10_beta
+  tags: update,rhel8_beta,rhel9_beta,rhel10_beta

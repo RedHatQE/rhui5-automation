@@ -42,6 +42,9 @@ PRS.add_argument("--rhsm",
 PRS.add_argument("--fips",
                  help="enable FIPS before running the deployment",
                  action="store_true")
+PRS.add_argument("--update",
+                 help="update all nodes before running the deployment",
+                 action="store_true")
 PRS.add_argument("--proxy",
                  help="configure RHUI to connect to the CDN via a proxy",
                  action="store_true")
@@ -141,6 +144,9 @@ elif PRESET_RHUA_IMAGE:
 
 if ARGS.rhsm:
     EVARS += " rhsm=True"
+
+if ARGS.update:
+    EVARS += " update=True"
 
 if ARGS.fips:
     EVARS += " fips=True"
