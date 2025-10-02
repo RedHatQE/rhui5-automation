@@ -141,6 +141,8 @@ class TestCLI():
         RHUIManagerCLI.packages_upload(RHUA, CUSTOM_REPOS[0], join(DATADIR, TEST_RPM))
         # also supply the whole directory
         RHUIManagerCLI.packages_upload(RHUA, CUSTOM_REPOS[0], DATADIR)
+        # now a directory with no RPMs
+        RHUIManagerCLI.packages_upload(RHUA, CUSTOM_REPOS[0], "/tmp", True)
         # test an unrecognized option
         cmd = "rhua rhui-manager packages upload --repo_id a --packages / --f"
         Expect.expect_retval(RHUA, cmd, 254)
@@ -154,6 +156,9 @@ class TestCLI():
         RHUIManagerCLI.packages_remote(RHUA,
                                        CUSTOM_REPOS[2],
                                        self.remote_content["html_with_links"])
+        # now a page with no RPMs
+        no_rpm_url = "https://ftp.linux.cz/"
+        RHUIManagerCLI.packages_remote(RHUA, CUSTOM_REPOS[1], no_rpm_url, True)
         # and finally also some bad stuff
         rhua = ConMgr.get_rhua_hostname()
         try:

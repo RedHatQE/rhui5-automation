@@ -390,12 +390,13 @@ class RHUIManagerCLI():
         return stdout.read().decode().splitlines()
 
     @staticmethod
-    def packages_remote(connection, repo_id, url):
+    def packages_remote(connection, repo_id, url, empty=False):
         '''
         upload packages from a remote URL to a custom repository
         '''
         cmd = f"rhua rhui-manager packages remote --repo_id {repo_id} --url {url}"
-        Expect.expect_retval(connection, cmd)
+        ecode = 238 if empty else 0
+        Expect.expect_retval(connection, cmd, ecode)
 
     @staticmethod
     def packages_remove(connection, repo_id, package_name, package_vr="", force=False):
@@ -410,12 +411,13 @@ class RHUIManagerCLI():
         Expect.expect_retval(connection, cmd)
 
     @staticmethod
-    def packages_upload(connection, repo_id, path):
+    def packages_upload(connection, repo_id, path, empty=False):
         '''
         upload a package or a directory with packages to the custom repo
         '''
         cmd = f"rhua rhui-manager packages upload --repo_id {repo_id} --packages '{path}'"
-        Expect.expect_retval(connection, cmd)
+        ecode = 238 if empty else 0
+        Expect.expect_retval(connection, cmd, ecode)
 
     @staticmethod
     def client_labels(connection):

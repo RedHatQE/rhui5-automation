@@ -109,6 +109,11 @@ class TestRepo():
         RHUIManagerRepo.upload_content(RHUA,
                                        [CUSTOM_REPOS[0]],
                                        CUSTOM_RPMS_DIR)
+        # try an empty directory, should be handled well
+        RHUIManagerRepo.upload_content(RHUA,
+                                       [CUSTOM_REPOS[0]],
+                                       "/tmp",
+                                       True)
 
     def test_06_upload_remote_rpms(self):
         '''upload rpms from remote servers to custom repos'''
@@ -123,6 +128,11 @@ class TestRepo():
         RHUIManagerRepo.upload_remote_content(RHUA,
                                               [CUSTOM_REPOS[2]],
                                               self.remote_content["html_with_links"])
+        # and finally an HTML page with no links to RPMs, should be handled well
+        RHUIManagerRepo.upload_remote_content(RHUA,
+                                              [CUSTOM_REPOS[2]],
+                                              "https://ftp.linux.cz/",
+                                              True)
 
     def test_07_check_for_package(self):
         '''check package lists'''

@@ -323,7 +323,7 @@ class RHUIManagerRepo():
         RHUIManager.quit(connection)
 
     @staticmethod
-    def upload_content(connection, repolist, path):
+    def upload_content(connection, repolist, path, empty=False):
         '''
         upload content to a custom repository
         '''
@@ -334,11 +334,12 @@ class RHUIManagerRepo():
         Expect.enter(connection, path)
         # proceeding without checking the TUI as its content is random/unpreditable;
         # you should check if the packages were uploaded
-        RHUIManager.proceed_without_check(connection)
+        if not empty:
+            RHUIManager.proceed_without_check(connection)
         RHUIManager.quit(connection, timeout=60)
 
     @staticmethod
-    def upload_remote_content(connection, repolist, url):
+    def upload_remote_content(connection, repolist, url, empty=False):
         '''
         upload content from a remote web site to a custom repository
         '''
@@ -349,7 +350,8 @@ class RHUIManagerRepo():
         Expect.enter(connection, url)
         # proceeding without checking the TUI as its content is random/unpreditable;
         # you should check if the packages were uploaded
-        RHUIManager.proceed_without_check(connection)
+        if not empty:
+            RHUIManager.proceed_without_check(connection)
         RHUIManager.quit(connection, timeout=60)
 
     @staticmethod
