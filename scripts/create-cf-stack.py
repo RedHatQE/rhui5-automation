@@ -41,6 +41,7 @@ argparser.add_argument('--launchpad-os', help='RHEL version for the launchpad. P
 argparser.add_argument('--launchpad-ami', help='AMI ID for the launchpad, to test an arbitrary OS. Must be in the given region, and x86_64.')
 argparser.add_argument('--launchpad-user', help='user (login) name for the launchpad as some OS AMIs might use a name different than RHEL AMIs do.')
 argparser.add_argument('--nfs', help='NFS', action='store_const', const=True, default=False)
+argparser.add_argument('--local-content', help='prepare for local content rather than content on a remote FS', action='store_const', const=True, default=False)
 argparser.add_argument('--test', help='test machine', action='store_const', const=True, default=False)
 argparser.add_argument('--clone', help='add another RHUA for a future clone or save&restore test', action='store_const', const=True, default=False)
 argparser.add_argument('--input-conf', default="/etc/rhui_ec2.yaml", help='use supplied yaml config file')
@@ -154,11 +155,13 @@ if args.test:
     json_dict['Description'] += ", TEST machine"
 if args.nfs:
     json_dict['Description'] += ", NFS"
+if args.local_content:
+    json_dict['Description'] += ", local content"
 if args.clone:
     json_dict['Description'] += ", another RHUA (for cloning or saving&restoring)"
 
 
-fs_type_f = fs_type
+fs_type_f = "local_content" if args.local_content else fs_type
 
 if fs_type_f == "rhua":
     fs_type_f = "nfs"
@@ -227,22 +230,18 @@ if not args.cli_only:
 
 # nfs == rhua
 # add a 100 GB volume for RHUI repos if using NFS
+extra_block_device_mappings = [] if args.local_content else [{"DeviceName" : "/dev/sdb", "Ebs" : {"VolumeSize" : "100"}}]
+
 if fs_type == "rhua":
     json_dict['Resources']["rhua"] = \
      {"Properties": {"ImageId": {"Fn::FindInMap": [f"RHEL{args.rhua_os}", {"Ref": "AWS::Region"}, "AMI"]},
-                               "InstanceType": instance_types["x86_64"],
-                               "KeyName": {"Ref": "KeyName"},
-                               "SecurityGroups": [{"Ref": "RHUIsecuritygroup"}],
-                                 "BlockDeviceMappings" : [
-                                            {
-                                              "DeviceName" : "/dev/sdb",
-                                              "Ebs" : {"VolumeSize" : "100"}
-                                            }
-                                 ],
-                               "Tags": [{"Key": "Name", "Value": concat_name("rhua")},
-                                         {"Key": "Role", "Value": "RHUA"},
-                                         ]},
-               "Type": "AWS::EC2::Instance"}
+                     "InstanceType": instance_types["x86_64"],
+                     "KeyName": {"Ref": "KeyName"},
+                     "SecurityGroups": [{"Ref": "RHUIsecuritygroup"}],
+                     "BlockDeviceMappings" : extra_block_device_mappings,
+                     "Tags": [{"Key": "Name", "Value": concat_name("rhua")},
+                              {"Key": "Role", "Value": "RHUA"}]},
+      "Type": "AWS::EC2::Instance"}
 
 elif fs_type:
     json_dict['Resources']["rhua"] = \
@@ -316,12 +315,7 @@ if fs_type == "nfs":
                                "InstanceType": instance_types["x86_64"],
                                "KeyName": {"Ref": "KeyName"},
                                "SecurityGroups": [{"Ref": "RHUIsecuritygroup"}],
-                                 "BlockDeviceMappings" : [
-                                            {
-                                              "DeviceName" : "/dev/sdb",
-                                              "Ebs" : {"VolumeSize" : "100"}
-                                            },
-                                 ],
+                                 "BlockDeviceMappings" : extra_block_device_mappings,
                                "Tags": [{"Key": "Name", "Value": concat_name("nfs")},
                                          {"Key": "Role", "Value": "NFS"},
                                          ]},
@@ -477,7 +471,7 @@ try:
                     f.write(f" ansible_ssh_extra_args=\"{args.ansible_ssh_extra_args}\"")
                 f.write('\n')
         # rhua as nfs
-        if fs_type == "rhua":
+        if fs_type == "rhua" and not args.local_content:
             f.write('\n[NFS]\n')
             for role, hostname in hostnames.items():
                 if role == "rhua":

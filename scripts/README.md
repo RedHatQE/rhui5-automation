@@ -171,6 +171,21 @@ RHUI can be deployed in a special mode where the CDS container is running togeth
 container on the RHUA node, and no dedicated CDS and HAProxy VMs are needed. To launch only the VMs
 for the launchpad and the RHUA, use the `--boxed` argument of the stack creation script.
 
+### RHUI with content on the local file system
+While not something one would do in a production environment, RHUI can have the synchronized
+content on the local file system rather than as a mount point for a remote share. This can be
+useful for a quick installation test that doesn't need a CDS or other nodes, and this method can
+even be combined with RHUI-in-a-box as described in the previous paragraph.
+
+To use this feature, deploy RHUI by using the `--local-content` argument of the stack creation
+script, which will then omit the NFS server from the inventory file and the extra volume for the
+content, which is normally created and attached either on the RHUA itself or on a separate NFS
+server). Check the README file for the deployment, deploy RHUI by using the `--local-content`
+argument of the stack creation script, which will then omit the NFS server from the inventory file
+and the extra volume for the content (either on the RHUA itself or on a separate NFS server).
+Check the README file for the [deployment README](../deploy/README.md) file for further information
+on this type of deployment.
+
 ### How to delete stack
 
 Stack can be deleted "all in one" with CloudFormation. On the AWS amazon web page go to the

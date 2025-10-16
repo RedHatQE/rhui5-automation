@@ -101,6 +101,9 @@ PRS.add_argument("--boxed",
                  help="prepare for a 'RHUI-in-a-box' deployment - RHUA and CDS on the same host; \
                        still requires an answers file with cds_combo: True (see `--answers')",
                  action="store_true")
+PRS.add_argument("--local-content",
+                 help="install RHUI without a remote share; content will be stored locally",
+                 action="store_true")
 PRS.add_argument("--dry-run",
                  help="only construct and print the ansible-playbook command, do not run it",
                  action="store_true")
@@ -167,6 +170,9 @@ if ARGS.boxed:
     if not ARGS.answers:
         ARGS.answers = "_"
     EVARS += " boxed=True"
+
+if ARGS.local_content:
+    EVARS += " local_content=True"
 
 if ARGS.answers:
     if ARGS.answers.startswith("/"):

@@ -148,6 +148,13 @@ name and specify it as described above. Either way, the `--boxed` argument is ne
 > and/or HAProxy nodes. However, you can add or create repos, build configuration RPMs and install
 > them on client VMs, and you _should_ get content.
 
+RHUI with content on the local filesystem
+-----------------------------------------
+An even more compat RHUI environment without a dedicated remote file server can be deployed. Be
+sure to have a stack created accordingly, as described in the stack creation README file. Then run
+the `deploy.py` file with the `--local-content` argument. Note that you can combine it with the
+`--boxed` argument, if your stack is created like that.
+
 Managed roles
 -------------
 - RHUA

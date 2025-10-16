@@ -27,7 +27,7 @@
       --migration-fs-server anotherrhua.example.com:/export
       {% else %}
       --target-host rhua.example.com
-      --remote-fs-server nfs.example.com:/export
+      --remote-fs-server {{ 'none' if local_content | default(False) else 'nfs.example.com:/export' }}
       {% if not boxed | default(False) %}
       --cds-lb-hostname lb.example.com
       {% endif %}
