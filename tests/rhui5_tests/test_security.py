@@ -122,6 +122,11 @@ def test_06_cds_ssl():
     san = _get_san(CDS)
     nose.tools.eq_(san, HOSTNAMES["HAProxy"])
 
+def test_07_v2_access():
+    """check if access to /v2 (container catalog) on the RHUA is denied by default"""
+    response = requests.head(f"https://{HOSTNAMES['RHUA']}/v2/", timeout=10, verify=False)
+    nose.tools.eq_(response.status_code, 400)
+
 def test_99_cleanup():
     """delete CDS and HAProxy nodes"""
     RHUIManagerCLIInstance.delete(RHUA, "haproxy", force=True)

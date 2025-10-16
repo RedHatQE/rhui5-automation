@@ -1,11 +1,5 @@
 """Container Management Tests"""
 
-# To skip the upload of an entitlement certificate and the registration of CDS and HAProxy nodes --
-# because you want to save time in each client test case and do this beforehand -- run:
-# export RHUISKIPSETUP=1
-# in your shell before running this script.
-# The cleanup will be skipped, too, so you ought to clean up eventually.
-
 from os import getenv
 from os.path import basename
 import time
@@ -18,6 +12,7 @@ import yaml
 
 from rhui5_tests_lib.cfg import Config
 from rhui5_tests_lib.conmgr import ConMgr
+from rhui5_tests_lib.installer import RHUIInstaller
 from rhui5_tests_lib.rhuimanager import RHUIManager
 from rhui5_tests_lib.rhuimanager_client import RHUIManagerClient
 from rhui5_tests_lib.rhuimanager_instance import RHUIManagerInstance
@@ -28,7 +23,6 @@ from rhui5_tests_lib.util import Util
 logging.basicConfig(level=logging.DEBUG)
 
 RHUA = ConMgr.connect()
-# __reusable_clients_with_cds
 # To make this script communicate with a client machine different from cli01.example.com, run:
 # export RHUICLI=hostname
 # in your shell before running this script, replacing "hostname" with the actual client host name.
@@ -68,21 +62,21 @@ class TestClient():
 
     @staticmethod
     def test_01_init():
-        """log in to RHUI"""
-        if not getenv("RHUISKIPSETUP"):
-            RHUIManager.initial_run(RHUA)
+        """enable container support, log in to RHUI"""
+        Config.set_rhui_tools_conf(RHUA, "container", "container_support_enabled", "True")
+        RHUIInstaller.rerun()
+        time.sleep(30)
+        RHUIManager.initial_run(RHUA)
 
     @staticmethod
     def test_02_add_cds():
         """add a CDS"""
-        if not getenv("RHUISKIPSETUP"):
-            RHUIManagerInstance.add_instance(RHUA, "cds")
+        RHUIManagerInstance.add_instance(RHUA, "cds")
 
     @staticmethod
     def test_03_add_hap():
         """add an HAProxy Load-balancer"""
-        if not getenv("RHUISKIPSETUP"):
-            RHUIManagerInstance.add_instance(RHUA, "loadbalancers")
+        RHUIManagerInstance.add_instance(RHUA, "loadbalancers")
 
     def test_04_add_containers(self):
         """add containers"""
@@ -199,6 +193,9 @@ class TestClient():
 
     def test_99_cleanup(self):
         """remove the containers from the client and the RHUA, uninstall HAProxy and CDS"""
+        Config.restore_rhui_tools_conf(RHUA)
+        RHUIInstaller.rerun()
+        time.sleep(30)
         ancestor = f"{HA_HOSTNAME}/{self.container_id}:latest"
         Expect.expect_retval(CLI, f"podman rm -f $(podman ps -a -f ancestor={ancestor} -q)")
         to_remove = [self.container_id, Util.safe_pulp_repo_name(self.container_quay["name"])]
@@ -213,9 +210,8 @@ class TestClient():
         results = stdout.read().decode()
         nose.tools.eq_(results, '')
         Util.remove_rpm(CLI, [CONF_RPM_NAME])
-        if not getenv("RHUISKIPSETUP"):
-            RHUIManagerInstance.delete_all(RHUA, "loadbalancers")
-            RHUIManagerInstance.delete_all(RHUA, "cds")
+        RHUIManagerInstance.delete_all(RHUA, "loadbalancers")
+        RHUIManagerInstance.delete_all(RHUA, "cds")
 
     @staticmethod
     def teardown_class():

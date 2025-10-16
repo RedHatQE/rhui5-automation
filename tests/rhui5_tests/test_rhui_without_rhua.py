@@ -14,6 +14,7 @@ import yaml
 from rhui5_tests_lib.cfg import Config
 from rhui5_tests_lib.conmgr import ConMgr
 from rhui5_tests_lib.helpers import Helpers
+from rhui5_tests_lib.installer import RHUIInstaller
 from rhui5_tests_lib.rhuimanager import RHUIManager
 from rhui5_tests_lib.rhuimanager_client import RHUIManagerClient, \
                                                ContainerSupportDisabledError as CliError
@@ -41,17 +42,6 @@ FETCHER = "try_files $uri @fetch_from_rhua;"
 RPM_NAME = "test_rhui_without_rhua"
 TMPDIR = "/root/" + RPM_NAME
 TMPDIR_HOST = "/var/lib/rhui" + TMPDIR
-
-def _toggle_support(support=True):
-    """helper method to enable or disable container and RHUA fetcher support"""
-    # to disable the support means to set the booleans accordingly, making a backup first
-    # to enable the support means to restore the previously created backup
-    if support:
-        Config.restore_rhui_tools_conf(RHUA)
-    else:
-        support_str = str(support)
-        Config.set_rhui_tools_conf(RHUA, "container", "container_support_enabled", support_str)
-        Config.set_rhui_tools_conf(RHUA, "rhui", "fetch_missing_symlinks", support_str, False)
 
 class TestRHUIWithoutRHUA():
     """class to test RHUI clients without CDSes contacting the RHUA"""
@@ -85,7 +75,10 @@ class TestRHUIWithoutRHUA():
     @staticmethod
     def test_02_disable_containers():
         """disable support for containers and the RHUA fetcher"""
-        _toggle_support(False)
+        Config.set_rhui_tools_conf(RHUA, "container", "container_support_enabled", "False")
+        Config.set_rhui_tools_conf(RHUA, "rhui", "fetch_missing_symlinks", "False", False)
+        RHUIInstaller.rerun()
+        time.sleep(30)
 
     @staticmethod
     def test_03_add_cds():
@@ -194,7 +187,9 @@ class TestRHUIWithoutRHUA():
 
     def test_99_cleanup(self):
         """clean up"""
-        _toggle_support()
+        Config.restore_rhui_tools_conf(RHUA)
+        RHUIInstaller.rerun()
+        time.sleep(30)
         RHUIManagerRepo.delete_all_repos(RHUA)
         RHUIManagerInstance.delete_all(RHUA, "cds")
         RHUIManagerInstance.delete_all(RHUA, "loadbalancers")

@@ -237,9 +237,11 @@ class TestRepo():
 
     def test_16_add_containers(self):
         '''add containers'''
+        # enable container support first
+        Config.set_rhui_tools_conf(RHUA, "container", "container_support_enabled", "True")
         # use saved credentials; save them in the RHUI configuration first
         # first a RH container
-        Config.set_registry_credentials(RHUA)
+        Config.set_registry_credentials(RHUA, backup=False)
         RHUIManagerRepo.add_container(RHUA,
                                       self.containers["rh"]["name"],
                                       self.containers["rh"]["id"],
