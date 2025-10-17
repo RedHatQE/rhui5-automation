@@ -157,8 +157,7 @@ class TestCLI():
                                        CUSTOM_REPOS[2],
                                        self.remote_content["html_with_links"])
         # now a page with no RPMs
-        no_rpm_url = "https://ftp.linux.cz/"
-        RHUIManagerCLI.packages_remote(RHUA, CUSTOM_REPOS[1], no_rpm_url, True)
+        RHUIManagerCLI.packages_remote(RHUA, CUSTOM_REPOS[1], self.remote_content["no_links"], True)
         # and finally also some bad stuff
         rhua = ConMgr.get_rhua_hostname()
         try:

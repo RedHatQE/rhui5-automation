@@ -237,8 +237,9 @@ comps:
         id: "CRB"
 remote_content:
     rpm: "https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/python3-requests-2.25.1-10.el9.noarch.rpm"
-    ftp: "ftp://ftp.fi.muni.cz/pub/linux/redhat/linux/enterprise/2.1AS/en/os/i386/SRPMS/xsnow-1.40-14.src.rpm"
-    html_with_links: "https://ftp.fi.muni.cz/pub/linux/redhat/linux/enterprise/7Server/en/Convert2RHEL/SRPMS/"
+    ftp: "https://ftp.sh.cvut.cz/fedora/epel/epel-release-latest-9.noarch.rpm"
+    html_with_links: "https://ftp.redhat.com/pub/redhat/linux/enterprise/9Base/en/Convert2RHEL/SRPMS/"
+    no_links: "https://ftp.redhat.com/"
 package_versions:
     test_package: "tuned-profiles-sap"
 repo_versions:

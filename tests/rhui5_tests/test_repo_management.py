@@ -131,7 +131,7 @@ class TestRepo():
         # and finally an HTML page with no links to RPMs, should be handled well
         RHUIManagerRepo.upload_remote_content(RHUA,
                                               [CUSTOM_REPOS[2]],
-                                              "https://ftp.linux.cz/",
+                                              self.remote_content["no_links"],
                                               True)
 
     def test_07_check_for_package(self):
