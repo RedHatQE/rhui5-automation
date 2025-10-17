@@ -177,14 +177,10 @@ content on the local file system rather than as a mount point for a remote share
 useful for a quick installation test that doesn't need a CDS or other nodes, and this method can
 even be combined with RHUI-in-a-box as described in the previous paragraph.
 
-To use this feature, deploy RHUI by using the `--local-content` argument of the stack creation
+To use this feature, create the stack by using the `--local-content` argument of the stack creation
 script, which will then omit the NFS server from the inventory file and the extra volume for the
 content, which is normally created and attached either on the RHUA itself or on a separate NFS
-server). Check the README file for the deployment, deploy RHUI by using the `--local-content`
-argument of the stack creation script, which will then omit the NFS server from the inventory file
-and the extra volume for the content (either on the RHUA itself or on a separate NFS server).
-Check the README file for the [deployment README](../deploy/README.md) file for further information
-on this type of deployment.
+server. Check the [deployment README](../deploy/README.md) file for further information.
 
 ### How to delete stack
 

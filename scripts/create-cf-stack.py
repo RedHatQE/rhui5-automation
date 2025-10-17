@@ -95,6 +95,10 @@ if args.cli_only:
 if args.boxed:
     args.cds = args.haproxy = 0
 
+if args.local_content and args.nfs:
+    logging.error("local-content and nfs can not be set together!")
+    sys.exit(1)
+
 if (args.vpcid and not args.subnetid) or (args.subnetid and not args.vpcid):
     logging.error("vpcid and subnetid parameters should be set together!")
     sys.exit(1)
