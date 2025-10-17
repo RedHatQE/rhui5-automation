@@ -735,6 +735,27 @@ class TestCLI():
         nose.tools.ok_(not artifacts)
 
     @staticmethod
+    def test_53_tmpfiles_cleanup():
+        '''check if rhui-manager can have Pulp's temporary file removed'''
+        pulps_tmpdir = f"{RHUI_ROOT}/pulp3/tmp"
+        test_file_basename = "tmpx.rpm"
+        test_file = f"{pulps_tmpdir}/{test_file_basename}"
+        # first, create a fake temporary file
+        Expect.expect_retval(RHUA, f"rhua sudo -u pulp touch {test_file}")
+        time.sleep(1)
+        # check if the file is really there
+        Expect.expect_retval(RHUA, f"test -f {test_file}")
+        # run the cleanup
+        RHUIManagerCLI.repo_tmpfiles_cleanup(RHUA, min_age=0)
+        # check if the file is really gone
+        time.sleep(1)
+        Expect.expect_retval(RHUA, f"test -f {test_file}", 1)
+        # also check the log
+        Expect.ping_pong(RHUA,
+                         "tail /var/lib/rhui/root/.rhui/rhui.log",
+                         f"Temporary file {test_file_basename} deleted")
+
+    @staticmethod
     def test_99_cleanup():
         '''cleanup: remove temporary files'''
         rmtree(TMPDIR)

@@ -381,6 +381,18 @@ class RHUIManagerCLI():
         Expect.expect_retval(connection, "rhua rhui-manager repo orphan_cleanup")
 
     @staticmethod
+    def repo_tmpfiles_cleanup(connection, directory="", min_age=None, expect_trouble=False):
+        '''
+        clean up Pulp's temporary files
+        '''
+        cmd = "rhua rhui-manager repo tmpfiles_cleanup"
+        if directory:
+            cmd += f" --dir {directory}"
+        if min_age is not None:
+            cmd += f" --min_age {min_age}"
+        Expect.expect_retval(connection, cmd, 254 if expect_trouble else 0)
+
+    @staticmethod
     def packages_list(connection, repo_id):
         '''
         return a list of packages present in the repo
