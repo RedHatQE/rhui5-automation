@@ -16,8 +16,4 @@
       name: squid
       state: started
       enabled: yes
-  when:
-    - proxy is defined
-    - proxy|bool
-    - inventory_hostname in groups['HAPROXY']|default([])
   tags: proxy

@@ -10,4 +10,5 @@
   tags: haproxy
 
 - import_tasks: proxy.yml
+  when: proxy | default(False)
   tags: proxy

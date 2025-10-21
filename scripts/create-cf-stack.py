@@ -205,14 +205,20 @@ json_dict['Parameters'] = \
 {"KeyName": {"Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
               "Type": "String"}}
 
-ports = [22, 443, 2049, 3128]
+ports = {} if args.cli_only else {"https": 443, "nfs": 2049, "squid": 3128}
 if args.boxed:
-    ports.append(8443)
-
-sgingress = [{"CidrIp": "0.0.0.0/0",
+    ports["boxedhttps"] = 8443
+priv_addr_spaces = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+sgingress = [{"CidrIp": space,
               "FromPort": port,
               "ToPort": port,
-              "IpProtocol": "tcp"} for port in ports]
+              "IpProtocol": "tcp"} for port in ports.values() for space in priv_addr_spaces]
+ports["ssh"] = 22
+sgingress.append({"CidrIp": "0.0.0.0/0",
+                  "FromPort": ports["ssh"],
+                  "ToPort": ports["ssh"],
+                  "IpProtocol": "tcp"})
+
 json_dict["Resources"] = \
 {"RHUIsecuritygroup": {"Properties": {"GroupDescription": "RHUI security group",
                                       "SecurityGroupIngress": sgingress},
