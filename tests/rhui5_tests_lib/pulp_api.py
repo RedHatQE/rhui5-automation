@@ -57,3 +57,15 @@ class PulpAPI():
         if data["results"]:
             return data["results"][0]
         raise RuntimeError(f"{repo} does not exist")
+
+    @staticmethod
+    def list_tasks(connection, states=None):
+        """ return information about tasks """
+        tasks_href = "/pulp/api/v3/tasks/"
+        if states:
+            search_states = ",".join(states)
+            tasks_href = f"{tasks_href}?state__in={search_states}"
+        cmd = _get_api_base_cmd(connection) + tasks_href
+        _, stdout, _ = connection.exec_command(cmd)
+        data = json.load(stdout)
+        return data["results"]

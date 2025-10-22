@@ -10,6 +10,8 @@ from rhui5_tests_lib.helpers import Helpers
 from rhui5_tests_lib.util import Util
 
 DEFAULT_ENT_CERT = "/root/test_files/rhcert.pem"
+FLAG_FILE = "/var/lib/rhui/remote_share/repo-notes/rhui_no_syncing.flag"
+CHECK_FLAG_FILE_CMD = f"test -f {FLAG_FILE}"
 
 def _get_repo_statuses_json(connection):
     '''
@@ -232,9 +234,9 @@ class RHUIManagerCLI():
         return response
 
     @staticmethod
-    def repo_sync(connection, repo_id, expect_success=True, is_valid=True, use_json=True):
+    def repo_sync(connection, repo_id, expect_success=True, is_valid=True, use_json=True, wait=True):
         '''
-        sync a repo
+        sync a repo; wait until it's synced by default, or optionally only start syncing
         '''
         cmd = f"rhua rhui-manager repo sync --repo_id {repo_id}; echo $?"
         _, stdout, _ = connection.exec_command(cmd)
@@ -244,6 +246,8 @@ class RHUIManagerCLI():
             nose.tools.ok_("successfully scheduled" in output,
                            msg=f"unexpected output: {output}")
             nose.tools.eq_(ecode, 0)
+            if not wait:
+                return
             time.sleep(10)
             _wait_till_repo_synced(connection, repo_id, expect_success, use_json)
         else:
@@ -257,14 +261,38 @@ class RHUIManagerCLI():
                            msg=f"unexpected log entry: {output}")
 
     @staticmethod
-    def repo_sync_all(connection):
+    def repo_sync_all(connection, cron=False, wait=True):
         '''
-        sync all repos
+        sync all repos; wait until they're synced by default, or optionally only start syncing
         '''
         cmd = "rhua rhui-manager repo sync_all"
+        if cron:
+            cmd += " --cron"
         Expect.expect_retval(connection, cmd)
+        if not wait:
+            return
         time.sleep(10)
         _wait_till_all_repos_synced(connection)
+
+    @staticmethod
+    def repo_stop_syncing(connection, force=False):
+        '''
+        prevent automatic syncing, cancel waiting tasks, and optionally also running tasks
+        '''
+        cmd = "rhua rhui-manager repo stop_syncing"
+        if force:
+            cmd += " --force"
+        Expect.expect_retval(connection, cmd, timeout=60)
+        Expect.expect_retval(connection, CHECK_FLAG_FILE_CMD)
+
+    @staticmethod
+    def repo_resume_syncing(connection):
+        '''
+        resume automatic syncing
+        '''
+        cmd = "rhua rhui-manager repo resume_syncing"
+        Expect.expect_retval(connection, cmd)
+        Expect.expect_retval(connection, CHECK_FLAG_FILE_CMD, 1)
 
     @staticmethod
     def repo_info(connection, repo_id):

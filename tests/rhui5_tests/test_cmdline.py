@@ -16,6 +16,7 @@ import yaml
 
 from rhui5_tests_lib.cfg import Config, RHUI_ROOT
 from rhui5_tests_lib.conmgr import ConMgr
+from rhui5_tests_lib.pulp_api import PulpAPI
 from rhui5_tests_lib.rhuimanager import RHUIManager
 from rhui5_tests_lib.rhuimanager_cmdline import RHUIManagerCLI, \
                                                 CustomRepoAlreadyExists, \
@@ -753,6 +754,64 @@ class TestCLI():
         Expect.ping_pong(RHUA,
                          "tail /var/lib/rhui/root/.rhui/rhui.log",
                          f"Temporary file {test_file_basename} deleted")
+
+    def test_54_stop_resume_syncing(self):
+        '''test the stop/resume syncing feature'''
+        errors = []
+        # upload the cert and add a few repos
+        RHUIManagerCLI.cert_upload(RHUA, join(DATADIR, CERTS["normal"]))
+        RHUIManagerCLI.repo_add(RHUA, self.product_name)
+        # prevent automatic syncing
+        RHUIManagerCLI.repo_stop_syncing(RHUA)
+        # see if the prevention works
+        RHUIManagerCLI.repo_sync_all(RHUA, cron=True, wait=False)
+        _, stdout, _ = RHUA.exec_command("tail -1 /var/lib/rhui/root/.rhui/rhui.log")
+        tail = stdout.read().decode()
+        log_msg = "Didn't run automatic sync_all task"
+        if log_msg not in tail:
+            errors.append(f"The prevention doesn't seem to have been logged: {tail}")
+        # start forcible syncing
+        RHUIManagerCLI.repo_sync_all(RHUA, wait=False)
+        time.sleep(2)
+        # see if there are running or waiting tasks
+        active_tasks = PulpAPI.list_tasks(RHUA, ["running", "waiting"])
+        if not active_tasks:
+            errors.append("No active tasks were found after synchronization started. " +
+                          "This test may have false negative results.")
+        # cancel all tasks
+        RHUIManagerCLI.repo_stop_syncing(RHUA, force=True)
+        # see if that was logged
+        _, stdout, _ = RHUA.exec_command("tail /var/lib/rhui/root/.rhui/rhui.log")
+        tail = stdout.read().decode()
+        log_msg = "Successfully cancel"
+        if log_msg not in tail:
+            errors.append(f"The cancelation doesn't seem to have been logged: {tail}")
+        time.sleep(7)
+        # see if there are running or waiting tasks
+        active_tasks = PulpAPI.list_tasks(RHUA, ["running", "waiting"])
+        if active_tasks:
+            errors.append("Some active tasks were found even after an attempt " +
+                          f"was made to cancel them: {active_tasks}")
+        # resume syncing
+        RHUIManagerCLI.repo_resume_syncing(RHUA)
+        # see if that was logged
+        _, stdout, _ = RHUA.exec_command("tail /var/lib/rhui/root/.rhui/rhui.log")
+        tail = stdout.read().decode()
+        log_msg = "Successfully removed"
+        if log_msg not in tail:
+            errors.append(f"The resumption doesn't seem to have been logged: {tail}")
+        # rerun that one more time and check the log
+        RHUIManagerCLI.repo_resume_syncing(RHUA)
+        _, stdout, _ = RHUA.exec_command("tail /var/lib/rhui/root/.rhui/rhui.log")
+        tail = stdout.read().decode()
+        log_msg = "nothing to remove"
+        if log_msg not in tail:
+            errors.append(f"The no-op doesn't seem to have been logged: {tail}")
+        # clean up
+        for repo in self.product_ids:
+            RHUIManagerCLI.repo_delete(RHUA, repo)
+        RHUIManager.remove_rh_certs(RHUA)
+        nose.tools.ok_(len(errors) == 0, msg="\n\n".join(errors))
 
     @staticmethod
     def test_99_cleanup():
