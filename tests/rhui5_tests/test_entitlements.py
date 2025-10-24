@@ -6,6 +6,7 @@ import logging
 import nose
 from stitches.expect import Expect
 
+from rhui5_tests_lib.cfg import Config
 from rhui5_tests_lib.conmgr import ConMgr
 from rhui5_tests_lib.rhuimanager import RHUIManager
 from rhui5_tests_lib.rhuimanager_entitlement import RHUIManagerEntitlements, \
@@ -20,6 +21,16 @@ logging.basicConfig(level=logging.DEBUG)
 RHUA = ConMgr.connect()
 DATADIR = "/root/test_files"
 DATADIR_HOST = "/var/lib/rhui" + DATADIR
+
+def _tui_repo_add_nothing():
+    '''
+       open the screen for adding repos but don't add anything
+    '''
+    RHUIManager.screen(RHUA, "repo")
+    Expect.enter(RHUA, "a")
+    Expect.expect(RHUA, "Enter value", 360)
+    Expect.enter(RHUA, "b")
+    RHUIManager.quit(RHUA)
 
 class TestEntitlement():
     '''
@@ -185,6 +196,40 @@ class TestEntitlement():
         cmd = "rhua python3.11 -c \"from rhsm import certificate;" \
                                   f"certificate.create_from_file('{DATADIR}/{cert}')\""
         Expect.expect_retval(RHUA, cmd)
+
+    @staticmethod
+    def test_18_entitlement_error_handling():
+        '''
+           check for appropriate error messages when there are problems getting entitlement details
+        '''
+        # try a revoked cert first
+        cert = "rhcert_revoked.pem"
+        if Util.cert_expired(RHUA, f"{DATADIR_HOST}/{cert}"):
+            raise nose.exc.SkipTest("The given certificate has already expired.")
+        # upload the cert
+        RHUIManagerEntitlements.upload_rh_certificate(RHUA, f"{DATADIR}/{cert}")
+        # use the TUI and load the dialog for adding repos
+        _tui_repo_add_nothing()
+        # clean up
+        RHUIManager.remove_rh_certs(RHUA)
+        # check the log
+        pattern = "Received HTTP 403 Forbidden retrieving " \
+                  "https://cdn.redhat.com/content/dist/rhel10/rhui/listing " \
+                  "for repository " \
+                  "\"Red Hat Enterprise Linux 10 for x86_64 - BaseOS from RHUI"
+        Expect.expect_retval(RHUA, f"grep '{pattern}' /var/lib/rhui/root/.rhui/rhui.log")
+        # also check connection issues
+        url = f"https://{ConMgr.get_lb_hostname()}"
+        Config.set_rhui_tools_conf(RHUA, "redhat", "server_url", url)
+        RHUIManagerEntitlements.upload_rh_certificate(RHUA, f"{DATADIR}/{cert}")
+        # use the TUI again
+        _tui_repo_add_nothing()
+        # clean up
+        RHUIManager.remove_rh_certs(RHUA)
+        Config.restore_rhui_tools_conf(RHUA)
+        # check the log
+        pattern = f"Failed to connect to {url}"
+        Expect.expect_retval(RHUA, f"grep '{pattern}' /var/lib/rhui/root/.rhui/rhui.log")
 
     @staticmethod
     def teardown_class():

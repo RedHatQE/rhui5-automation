@@ -28,6 +28,7 @@ You need a ZIP file with the following files in the root of the archive:
 
 * `rhcert.pem` — This must be a valid Red Hat content certificate allowing access to the repositories used in `rhui5_tests/tested_repos.yaml`.
 * `rhcert.mapping` — Optional; a copy of the repo cache for rhcert.pem, taken from an existing RHUA. Using this file will speed up adding repos significantly.
+* `rhcert_revoked.pem` — This must be a certificate that hasn't expired but has been revoked (so the CDN/Candlepin rejects it with HTTP 403).
 * `rhcert_empty.pem` — This must be a Red Hat content certificate containing no entitlement.
 * `rhcert_expired.pem` — This must be an expired Red Hat content certificate.
 * `rhcert_incompatible.pem` — This must be a Red Hat content certificate containing one or more entitlements that are not compatible with RHUI (containing a non-RHUI repository path) and no compatible entitlement at all.
