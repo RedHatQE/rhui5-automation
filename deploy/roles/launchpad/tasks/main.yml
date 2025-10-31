@@ -26,6 +26,20 @@
   when: answers is defined
   tags: launchpad,reinstall
 
+- name: block for auth
+  block:
+  - name: copy the auth file to the launchpad
+    copy:
+      src: "{{ auth }}"
+      dest: /tmp/auth.json
+    become: "{{ ansible_os_family in families_that_need_root_for_containers }}"
+
+  - name: add the auth file to the list of volumes
+    set_fact:
+      installer_volumes: "{{ installer_volumes + ['/tmp/auth.json:/auth.json:Z'] }}"
+  when: auth is defined
+  tags: launchpad,reinstall
+
 - name: block for restoring a saved image
   block:
   - name: add the saved image to the list of volumes

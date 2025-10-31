@@ -60,6 +60,10 @@ PRS.add_argument("--answers",
                  help=f"optional answers file; an absolute path, or a file in {RHUI_DIR}, or " \
                       f"'_' as an alias for answers.yaml in {RHUI_DIR}",
                  metavar="file")
+PRS.add_argument("--auth",
+                 help=f"optional registry auth file; an absolute path, or a file in {RHUI_DIR}, or " \
+                      f"'_' as an alias for auth.json in {RHUI_DIR}",
+                 metavar="file")
 PRS.add_argument("--tests",
                  help="RHUI test to run",
                  metavar="test name or category")
@@ -186,6 +190,22 @@ if ARGS.answers:
         joint = expanduser(join(RHUI_DIR, answersfile))
         if exists(joint):
             EVARS += " answers=" + joint
+        else:
+            print(joint + " does not exist.")
+            sys.exit(1)
+
+if ARGS.auth:
+    if ARGS.auth.startswith("/"):
+        if exists(ARGS.auth):
+            EVARS += " auth=" + ARGS.auth
+        else:
+            print(ARGS.auth + " does not exist.")
+            sys.exit(1)
+    else:
+        authfile = "auth.json" if ARGS.auth == "_" else ARGS.auth
+        joint = expanduser(join(RHUI_DIR, authfile))
+        if exists(joint):
+            EVARS += " auth=" + joint
         else:
             print(joint + " does not exist.")
             sys.exit(1)

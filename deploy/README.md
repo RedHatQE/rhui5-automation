@@ -134,6 +134,20 @@ argument. The file can be specified the following ways:
 
 The deployment fails if the `--answers` argument is used with a file that does not exist.
 
+Supplying an optional auth file
+-------------------------------
+By default, registry credentials are passed to the installer using the relevant command line
+arguments. This means that the credentials are logged, and they would be displayed if the command
+was entered by hand. To avoid the exposure of the credentials, an auth file can be supplied. This
+auth file is the usual JSON file created by `podman login` beforehand. The file can, again, be
+specified the following ways:
+
+* An absolute path.
+* A file name in your RHUI directory (as defined in `~/.rhui5-automation.cfg`).
+* The underscore character, which is understood as `auth.json` in your RHUI directory.
+
+The deployment fails if the `--auth` argument is used with a file that does not exist.
+
 RHUI-in-a-box
 -------------
 As described in the README file for the stack creation script, a compact RHUI environment with

@@ -27,6 +27,10 @@ class RHUIInstaller():
         answers_exist = launchpad.recv_exit_status("test -f /tmp/answers.yaml") == 0
         if answers_exist:
             cmd += " -v /tmp/answers.yaml:/answers.yaml:Z"
+        # if the auth file (still) exists on the launchpad, re-use it, too
+        auth_exists = launchpad.recv_exit_status("test -f /tmp/auth.json") == 0
+        if auth_exists:
+            cmd += " -v /tmp/auth.json:/auth.json:Z"
         if other_volumes:
             for key, value in other_volumes.items():
                 cmd += f" -v {value}:/{key}:Z"

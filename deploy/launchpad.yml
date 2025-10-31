@@ -38,8 +38,10 @@
       {% if rhua_image is defined %}
       --rhua-container-image {{ rhua_image }}
       {% endif %}
+      {% if auth is not defined %}
       --podman-username {{ registry['username'] }}
       --podman-password {{ registry['password'] }}
+      {% endif %}
     families_that_need_root_for_containers:
       - Suse
     distros_that_need_docker:
