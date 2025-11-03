@@ -163,3 +163,9 @@ class Helpers():
         """clear the symlinks to artifacts"""
         Expect.expect_retval(connection, f"rm -rf {RHUI_ROOT}/symlinks/pulp")
         time.sleep(7)
+
+    @staticmethod
+    def auth_exists(connection):
+        """check if the container auth file exists (on the RHUA)"""
+        auth_check_cmd = "test -f /var/lib/rhui/.config/containers/auth.json"
+        return connection.recv_exit_status(auth_check_cmd) == 0

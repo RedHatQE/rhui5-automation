@@ -2,6 +2,7 @@
 
 from rhui5_tests_lib.cfg import Config
 from rhui5_tests_lib.conmgr import ConMgr, SUDO_USER_NAME, SUDO_USER_KEY
+from rhui5_tests_lib.helpers import Helpers
 
 def _validate_node_type(text):
     '''
@@ -47,6 +48,8 @@ class RHUIManagerCLIInstance():
                 hostname = ConMgr.get_cds_hostnames()[0]
             elif node_type == "haproxy":
                 hostname = ConMgr.get_lb_hostname()
+        # check if the auth file exists
+        auth_exists = Helpers.auth_exists(connection)
         cmd = f"rhua rhui-manager {node_type} add " + \
               f"--hostname {hostname} --ssh_user {SUDO_USER_NAME} --keyfile_path {SUDO_USER_KEY}"
 
@@ -57,8 +60,9 @@ class RHUIManagerCLIInstance():
         default_image = default_cds_image if node_type == "cds" else default_haproxy_image
 
         cmd += f" --container_registry {registry}"
-        cmd += f" --registry_username {username}"
-        cmd += f" --registry_password {password}"
+        if not auth_exists:
+            cmd += f" --registry_username {username}"
+            cmd += f" --registry_password {password}"
         if image:
             cmd += f" --container_image {image}"
         elif default_image:

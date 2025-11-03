@@ -6,6 +6,7 @@ import time
 from stitches.expect import Expect, CTRL_C
 
 from rhui5_tests_lib.cfg import Config
+from rhui5_tests_lib.helpers import Helpers
 from rhui5_tests_lib.conmgr import ConMgr, SUDO_USER_NAME, SUDO_USER_KEY
 from rhui5_tests_lib.rhuimanager import RHUIManager
 from rhui5_tests_lib.instance import Instance
@@ -62,6 +63,8 @@ class RHUIManagerInstance():
         # in RHEL 8, ssh-keygen considers a hostname known even if the case doesn't match,
         # but rhui-manager doesn't
         known_host = hostname.islower() and connection.recv_exit_status(key_check_cmd) == 0
+        # check if the auth file exists
+        auth_exists = Helpers.auth_exists(connection)
         # run rhui-manager and add the instance
         RHUIManager.screen(connection, screen)
         Expect.enter(connection, "a")
@@ -111,9 +114,10 @@ class RHUIManagerInstance():
         Expect.expect(connection, "Container image")
         Expect.enter(connection, image or default_image)
         Expect.expect(connection, "Optional username")
-        Expect.enter(connection, username)
-        Expect.expect(connection, "Password to log")
-        Expect.enter(connection, password)
+        Expect.enter(connection, "" if auth_exists else username)
+        if not auth_exists:
+            Expect.expect(connection, "Password to log")
+            Expect.enter(connection, password)
         state = Expect.expect_list(connection, [
             (re.compile(".*Optional absolute path to user supplied SSL key file:.*", re.DOTALL), 1),
             (re.compile(".*Optional absolute path to user supplied HAProxy config.*", re.DOTALL), 2)
