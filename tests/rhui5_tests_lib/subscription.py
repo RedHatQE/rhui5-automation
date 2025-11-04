@@ -1,7 +1,5 @@
 """ RHSM integration in RHUI """
 
-import re
-
 from stitches.expect import Expect
 
 from rhui5_tests_lib.helpers import Helpers
@@ -29,3 +27,14 @@ class RHSMRHUI():
     def unregister_system(connection):
         """unregister from RHSM"""
         Expect.expect_retval(connection, "subscription-manager unregister", timeout=20)
+
+    @staticmethod
+    def copy_entitlement(connection, directory):
+        """copy test entitlement files from the specified test dir to the entitlement dir"""
+        source_directory = f"/var/lib/rhui/root/test_files/{directory}"
+        Expect.expect_retval(connection, f"cp {source_directory}/*.pem /etc/pki/entitlement/")
+
+    @staticmethod
+    def clear_entitlement(connection):
+        """clear the entitlement files"""
+        Expect.expect_retval(connection, "rm -f /etc/pki/entitlement/*")

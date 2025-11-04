@@ -14,6 +14,7 @@ from rhui5_tests_lib.rhuimanager_entitlement import RHUIManagerEntitlements, \
                                                     IncompatibleCertificate, \
                                                     MissingCertificate
 from rhui5_tests_lib.rhuimanager_repo import RHUIManagerRepo
+from rhui5_tests_lib.subscription import RHSMRHUI
 from rhui5_tests_lib.util import Util
 
 logging.basicConfig(level=logging.DEBUG)
@@ -155,16 +156,11 @@ class TestEntitlement():
         if Util.cert_expired(RHUA, f"{DATADIR_HOST}/{cert}"):
             raise nose.exc.SkipTest("The given certificate has already expired.")
         RHUIManagerEntitlements.upload_rh_certificate(RHUA, f"{DATADIR}/{cert}")
-
-    @staticmethod
-    def test_14_remove_semi_bad_cert():
-        '''
-            remove the certificate
-        '''
+        # remove the certificate
         RHUIManager.remove_rh_certs(RHUA)
 
     @staticmethod
-    def test_15_upload_nonexist_cert():
+    def test_14_upload_nonexist_cert():
         '''
             try uploading a certificate file that does not exist, should be handled gracefully
         '''
@@ -173,7 +169,7 @@ class TestEntitlement():
                                  RHUA,
                                  "/this_file_cant_be_there")
     @staticmethod
-    def test_16_upload_empty_cert():
+    def test_15_upload_empty_cert():
         '''
            upload a certificate that contains no entitlements
         '''
@@ -188,7 +184,7 @@ class TestEntitlement():
 
 
     @staticmethod
-    def test_17_check_longlife_cert():
+    def test_16_check_longlife_cert():
         '''
            check if a certificate that won't expire until a few decades later can be used
         '''
@@ -198,7 +194,7 @@ class TestEntitlement():
         Expect.expect_retval(RHUA, cmd)
 
     @staticmethod
-    def test_18_entitlement_error_handling():
+    def test_17_entitlement_error_handling():
         '''
            check for appropriate error messages when there are problems getting entitlement details
         '''
@@ -230,6 +226,24 @@ class TestEntitlement():
         # check the log
         pattern = f"Failed to connect to {url}"
         Expect.expect_retval(RHUA, f"grep '{pattern}' /var/lib/rhui/root/.rhui/rhui.log")
+
+    @staticmethod
+    def test_18_no_rhui_repo_entitlement():
+        '''
+           check for appropriate error messages when the entitlement cert contains no RHUI repos
+        '''
+        # copy the cert and key to the entitlement directory on the RHUA host
+        RHSMRHUI.copy_entitlement(RHUA, "no_rhui_repo_cert")
+        # run the sync script, expect a proper exit code
+        Expect.expect_retval(RHUA, "rhua rhui-subscription-sync", 252)
+        # nothing should be imported
+        Expect.expect_retval(RHUA, "ls /var/lib/rhui/pki/redhat/*pem", 2)
+        # check the log
+        log = "/var/lib/rhui/log/rhui-subscription-sync.log"
+        pattern = "no RHUI repos were found"
+        Expect.expect_retval(RHUA, f"tail {log} | grep '{pattern}'")
+        # clean up
+        RHSMRHUI.clear_entitlement(RHUA)
 
     @staticmethod
     def teardown_class():
