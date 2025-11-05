@@ -13,6 +13,7 @@ from os.path import basename
 import nose
 from stitches.expect import Expect
 
+from rhui5_tests_lib.cfg import Config
 from rhui5_tests_lib.conmgr import ConMgr
 from rhui5_tests_lib.rhuimanager_cmdline_instance import RHUIManagerCLIInstance
 
@@ -23,6 +24,8 @@ HAPROXY = ConMgr.connect(ConMgr.get_lb_hostname())
 FETCH_RPMS = "rpm -qa --qf '%{NAME} %{RSAHEADER:pgpsig}\n'"
 RH_KEY_ID = "199e2f91fd431d51"
 GPG_RPM = "gpg-pubkey"
+
+OFFICIAL_REGISTRY = "registry.redhat.io"
 
 def setup():
     """announce the beginning of the test run"""
@@ -49,6 +52,11 @@ def test_02_rpm_signatures():
         names_sigs = [data.split() for data in rpmdata]
         unsigned = [data[0] for data in names_sigs if data[-1] != RH_KEY_ID and data[0] != GPG_RPM]
         nose.tools.ok_(not unsigned, msg=f"unsigned RPMs in the {container} container: {unsigned}")
+
+def test_03_default_registry():
+    """check if the default registry in the right one"""
+    config_registry = Config.get_from_rhui_tools_conf(RHUA, "rhui", "default_container_registry")
+    nose.tools.eq_(config_registry, OFFICIAL_REGISTRY)
 
 def test_99_cleanup():
     """clean up"""
