@@ -127,6 +127,13 @@ def test_07_v2_access():
     response = requests.head(f"https://{HOSTNAMES['RHUA']}/v2/", timeout=10, verify=False)
     nose.tools.eq_(response.status_code, 400)
 
+def test_08_rhua_443_access():
+    """check if access to private directories on the Pulp web server is denied"""
+    paths = ["/pulp/api/v3/", "/auth/login/"]
+    for path in paths:
+        response = requests.head(f"https://{HOSTNAMES['RHUA']}{path}", timeout=10, verify=False)
+        nose.tools.eq_(response.status_code, 403)
+
 def test_99_cleanup():
     """delete CDS and HAProxy nodes"""
     RHUIManagerCLIInstance.delete(RHUA, "haproxy", force=True)

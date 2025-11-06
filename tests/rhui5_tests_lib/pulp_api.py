@@ -5,15 +5,13 @@ import shlex
 import json
 from stitches.expect import Expect
 
-from rhui5_tests_lib.conmgr import ConMgr
 from rhui5_tests_lib.util import Util
 
 def _get_api_base_cmd(connection):
     """get the base command to access the API; you append the required Pulp href to it"""
     admin_password = shlex.quote(Util.get_saved_password(connection))
-    rhua_hostname = ConMgr.get_rhua_hostname()
-    cacert = "/var/lib/rhui/pki/certs/ca.crt"
-    return f"curl --cacert {cacert} -u admin:{admin_password} https://{rhua_hostname}"
+    rhua_hostname = "localhost"
+    return f"rhua curl -k -u admin:{admin_password} https://{rhua_hostname}"
 
 class PulpAPI():
     """ Pulp API functions """

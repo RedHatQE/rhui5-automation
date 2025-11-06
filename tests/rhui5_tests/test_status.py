@@ -9,6 +9,7 @@
 import logging
 from os import getenv
 from os.path import basename
+import time
 
 import json
 import nose
@@ -185,6 +186,7 @@ class TestRhuiManagerStatus():
         """restart everything, check if the output is only the return code when --code is used"""
         # this test also checks if rhui-services-restart (re)starts a worker which is down
         Expect.expect_retval(RHUA, "rhua rhui-services-restart", timeout=60)
+        time.sleep(20)
         _, stdout, _ = RHUA.exec_command(CMD)
         output = stdout.read().decode().splitlines()
         nose.tools.eq_(len(output), 1)

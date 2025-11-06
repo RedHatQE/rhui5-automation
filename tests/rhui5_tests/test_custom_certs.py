@@ -17,6 +17,7 @@
 
 from os import getenv
 from os.path import basename
+import time
 
 import logging
 import nose
@@ -120,6 +121,7 @@ def test_04_check_installed_files():
 
 def test_05_add_cds():
     """[TUI] add a CDS with a custom SSL cert and key"""
+    time.sleep(20)
     RHUIManager.initial_run(RHUA)
     RHUIManagerInstance.add_instance(RHUA,
                                      "cds",
