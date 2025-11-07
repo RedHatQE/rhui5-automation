@@ -142,7 +142,7 @@ if ARGS.installer_image:
 elif PRESET_INSTALLER_IMAGE:
     EVARS += " installer_image=" + PRESET_INSTALLER_IMAGE
 else:
-    EVARS += " installer_image=rhui5/installer"
+    EVARS += " installer_image=rhui5/installer-rhel9"
 
 if ARGS.rhua_image:
     EVARS += " rhua_image=" + ARGS.rhua_image
