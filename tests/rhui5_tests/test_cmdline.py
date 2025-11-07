@@ -44,9 +44,10 @@ CERTS = {"normal": "rhcert.pem",
          "empty": "rhcert_empty.pem"}
 TMPDIR = "/root/test-cmdline"
 TMPDIR_HOST = "/var/lib/rhui" + TMPDIR
-mkdir(TMPDIR)
+TMPDIR_LOCAL = TMPDIR.replace("root", "tmp")
+mkdir(TMPDIR_LOCAL)
 # the TMPDIR path is also used on the RHUA, where it's automatically created later
-YUM_REPO_FILE = join(TMPDIR, "rh-cloud.repo")
+YUM_REPO_FILE = join(TMPDIR_LOCAL, "rh-cloud.repo")
 IMPORT_REPO_FILES_DIR = join(DATADIR, "repo_files")
 IMPORT_REPO_FILES = {"good": join(IMPORT_REPO_FILES_DIR, "good_repos.yaml"),
                      "wrongrepo": join(IMPORT_REPO_FILES_DIR, "wrong_repo_id.yaml"),
@@ -816,7 +817,7 @@ class TestCLI():
     @staticmethod
     def test_99_cleanup():
         '''cleanup: remove temporary files'''
-        rmtree(TMPDIR)
+        rmtree(TMPDIR_LOCAL)
         Expect.expect_retval(RHUA, f"rm -rf {TMPDIR_HOST}")
         Expect.expect_retval(RHUA, f"rhua rm -f /tmp/{CLI_CFG[0]}-{CLI_CFG[1]}.spec")
         Expect.expect_retval(RHUA, f"rhua rm -f /tmp/{ALT_CONTENT_SRC_NAME}-2.0.spec")
