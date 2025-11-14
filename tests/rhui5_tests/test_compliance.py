@@ -58,6 +58,19 @@ def test_03_default_registry():
     config_registry = Config.get_from_rhui_tools_conf(RHUA, "rhui", "default_container_registry")
     nose.tools.eq_(config_registry, OFFICIAL_REGISTRY)
 
+def test_04_invalid_url():
+    """check for spam in the subscription sync log"""
+    # only makes sense if the RHUA host is registered and the subscription has been synced...
+    # anyway:
+    log = "/var/lib/rhui/log/rhui-subscription-sync.log"
+    log_exists = RHUA.recv_exit_status(f"test -f {log}") == 0
+    if not log_exists:
+        raise nose.SkipTest(f"{log} doesn't exist (yet), can't test it")
+    Expect.expect_retval(RHUA,
+                         "grep -c 'Invalid repository download URL' "
+                         f"{log}*",
+                         1)
+
 def test_99_cleanup():
     """clean up"""
     if not getenv("RHUISKIPSETUP"):
