@@ -107,7 +107,7 @@
   delegate_to: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'][0] }}"
   tags: tests
 
-- name: change the ownership of the unpacked files on the launchpad to the unprivileged user
+- name: give the directory with test files on the launchpad to the unprivileged user
   file:
     path: /var/lib/rhui/root/test_files/custom_certs
     state: directory
@@ -140,6 +140,16 @@
   command: chcon -t container_file_t /var/lib/rhui/root/test_files/credentials.conf
   delegate_to: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'][0] }}"
   tags: tests,seli,reinstall
+
+- name: give the directory with test files on the RHUA to the rhui user
+  file:
+    path: /var/lib/rhui/root/test_files
+    state: directory
+    recurse: yes
+    owner: rhui
+    group: rhui
+  delegate_to: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'][0] }}"
+  tags: tests
 
 - name: run tests
   command: "rhuitests {{ tests }} quiet"
