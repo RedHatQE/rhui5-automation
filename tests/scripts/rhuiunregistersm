@@ -20,3 +20,6 @@ try:
 except ExpectFailed as err:
     print("An error occurred while unregistering it:")
     print(err)
+print("Clearing stale certificate files.")
+RHSMRHUI.clear_entitlement(CONNECTION)
+print("Done.")

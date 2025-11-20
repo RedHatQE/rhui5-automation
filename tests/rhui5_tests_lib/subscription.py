@@ -37,4 +37,5 @@ class RHSMRHUI():
     @staticmethod
     def clear_entitlement(connection):
         """clear the entitlement files"""
-        Expect.expect_retval(connection, "rm -f /etc/pki/entitlement/*")
+        dirs_to_purge = ["/etc/pki/entitlement", "/var/lib/rhui/pki/entitlement"]
+        Expect.expect_retval(connection, f"rm -rf {' '.join([d + '/*' for d in dirs_to_purge])}")
