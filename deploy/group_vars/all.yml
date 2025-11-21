@@ -1,6 +1,6 @@
 registry:
-  hostname: "{{ lookup('ini', 'hostname section=registry file=../../credentials.conf') }}"
-  username: "{{ lookup('ini', 'username section=registry file=../../credentials.conf') }}"
-  password: "{{ lookup('ini', 'password section=registry file=../../credentials.conf') }}"
-  insecure: "{{ lookup('ini', 'insecure section=registry file=../../credentials.conf') }}"
+  hostname: "{{ lookup('ini', 'hostname section=registry file=' + credentials) }}"
+  username: "{{ lookup('ini', 'username section=registry file=' + credentials) }}"
+  password: "{{ lookup('ini', 'password section=registry file=' + credentials) }}"
+  insecure: "{{ lookup('ini', 'insecure section=registry file=' + credentials) }}"
 rhui_manager: podman exec -it rhui5-rhua rhui-manager --noninteractive
