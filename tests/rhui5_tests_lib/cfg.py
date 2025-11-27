@@ -13,6 +13,8 @@ RHUI_ROOT = "/var/lib/rhui/remote_share"
 CREDS = "/root/test_files/credentials.conf"
 LEGACY_CA_DIR = "/etc/pki/rhui/legacy"
 
+OFFICIAL_REGISTRY = "registry.redhat.io"
+
 class Config():
     """reading from and writing to RHUI configuration files"""
     @staticmethod
@@ -37,22 +39,27 @@ class Config():
         _, stdout, _ = connection.exec_command(f"rhua cat {CREDS}")
         creds_cfg.read_file(stdout)
         if not creds_cfg.has_section("registry"):
-            raise RuntimeError(f"section 'registry' does not exist in {CREDS}")
-        if not creds_cfg.has_option("registry", "hostname"):
-            raise RuntimeError(f"hostname does not exist inside 'registry' in {CREDS}")
-        if not creds_cfg.has_option("registry", "username"):
-            raise RuntimeError(f"username does not exist inside 'registry' in {CREDS}")
-        if not creds_cfg.has_option("registry", "password"):
-            raise RuntimeError(f"password does not exist inside 'registry' in {CREDS}")
-        credentials = [creds_cfg.get("registry", "hostname"),
-                       creds_cfg.get("registry", "username"),
-                       creds_cfg.get("registry", "password"),
-                       creds_cfg.get("registry",
+            if not creds_cfg.has_section("rh"):
+                raise RuntimeError(f"neither a 'registry' nor an 'rh' section exists in {CREDS}")
+            section = "rh"
+        else:
+            section = "registry"
+            if not creds_cfg.has_option(section, "hostname"):
+                raise RuntimeError(f"hostname does not exist inside 'registry' in {CREDS}")
+        if not creds_cfg.has_option(section, "username"):
+            raise RuntimeError(f"username does not exist inside '{section}' in {CREDS}")
+        if not creds_cfg.has_option(section, "password"):
+            raise RuntimeError(f"password does not exist inside '{section}' in {CREDS}")
+        credentials = [OFFICIAL_REGISTRY if section == "rh" else creds_cfg.get(section,
+                                                                               "hostname"),
+                       creds_cfg.get(section, "username"),
+                       creds_cfg.get(section, "password"),
+                       creds_cfg.get(section,
                                      "installer_image",
                                      fallback="rhui5/installer-rhel9"),
-                       creds_cfg.get("registry", "rhua_image", fallback=""),
-                       creds_cfg.get("registry", "cds_image", fallback=""),
-                       creds_cfg.get("registry", "haproxy_image", fallback="")]
+                       creds_cfg.get(section, "rhua_image", fallback=""),
+                       creds_cfg.get(section, "cds_image", fallback=""),
+                       creds_cfg.get(section, "haproxy_image", fallback="")]
         return credentials
 
     @staticmethod
@@ -71,7 +78,7 @@ class Config():
         """get the URL for the given container registry or for the saved one (use "default" then)"""
         if site == "default":
             return Config.get_from_rhui_tools_conf(connection, "container", "registry_url")
-        urls = {"rh": "https://registry.redhat.io",
+        urls = {"rh": f"https://{OFFICIAL_REGISTRY}",
                 "quay": "https://quay.io",
                 "gitlab": "https://registry.gitlab.com"}
         if site in urls:

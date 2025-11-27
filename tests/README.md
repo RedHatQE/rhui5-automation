@@ -76,13 +76,14 @@ apply them before installing rhui5-automation and running tests, you can supply 
 with the changes.
 
 Lastly, in order for several test to be able to run, you need a file with valid Red Hat CCSP
-credentials, RHUI image registry credentials and Quay.io credentials. The file must look like this:
-
+credentials and Quay.io credentials. In addition, to test images hosted at a non-default (test)
+registry, you need the registry hostname and credentials. The file must look like this:
 ```
 [rh]
 username=YOUR_RH_USERNAME
 password=YOUR_RH_PASSWORD
 
+# if using a non-default container registry and images, add the following section:
 [registry]
 hostname=RHUI_CONTAINER_REGISTRY_HOSTNAME
 username=YOUR_REGISTRY_USERNAME

@@ -137,6 +137,11 @@ CMD = f"ansible-playbook -i {ARGS.inventory} deploy/site.yml --extra-vars '"
 # start building the extra variables
 EVARS = "unpriv_user=" + ARGS.unpriv_user if ARGS.unpriv_user else UNPRIV_USER
 
+# if there's no registry section, use the official registry and the RH credentials
+# (the data will be loaded in group_vars/all.yml accordingly)
+if not IMG_CFG.has_section("registry"):
+    EVARS += " use_rh_registry=True"
+
 if ARGS.installer_image:
     EVARS += " installer_image=" + ARGS.installer_image
 elif PRESET_INSTALLER_IMAGE:

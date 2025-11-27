@@ -13,7 +13,7 @@ from os.path import basename
 import nose
 from stitches.expect import Expect
 
-from rhui5_tests_lib.cfg import Config
+from rhui5_tests_lib.cfg import Config, OFFICIAL_REGISTRY
 from rhui5_tests_lib.conmgr import ConMgr
 from rhui5_tests_lib.rhuimanager_cmdline_instance import RHUIManagerCLIInstance
 
@@ -25,7 +25,7 @@ FETCH_RPMS = "rpm -qa --qf '%{NAME} %{RSAHEADER:pgpsig}\n'"
 RH_KEY_ID = "199e2f91fd431d51"
 GPG_RPM = "gpg-pubkey"
 
-OFFICIAL_REGISTRY = "registry.redhat.io"
+USING_TEST_REGISTRY = Config.get_registry_data(RHUA)[0] != OFFICIAL_REGISTRY
 
 def setup():
     """announce the beginning of the test run"""
@@ -34,6 +34,8 @@ def setup():
 def test_00_setup():
     """add CDS & HAProxy nodes"""
     if not getenv("RHUISKIPSETUP"):
+        if USING_TEST_REGISTRY:
+            raise nose.SkipTest("An unofficial registry is used.")
         RHUIManagerCLIInstance.add(RHUA, "cds", unsafe=True)
         RHUIManagerCLIInstance.add(RHUA, "haproxy", unsafe=True)
 
@@ -46,6 +48,8 @@ def test_01_deprecation_warnings():
 
 def test_02_rpm_signatures():
     """check if all packages in RHUI containers are signed"""
+    if USING_TEST_REGISTRY:
+        raise nose.SkipTest("An unofficial registry is used.")
     for connection, container in [[RHUA, "rhua"], [CDS, "cds"], [HAPROXY, "ha"]]:
         _, stdout, _ = connection.exec_command(f"{container} {FETCH_RPMS}")
         rpmdata = stdout.read().decode().splitlines()
@@ -74,6 +78,8 @@ def test_04_invalid_url():
 def test_99_cleanup():
     """clean up"""
     if not getenv("RHUISKIPSETUP"):
+        if USING_TEST_REGISTRY:
+            raise nose.SkipTest("An unofficial registry is used.")
         RHUIManagerCLIInstance.delete(RHUA, "haproxy", force=True)
         RHUIManagerCLIInstance.delete(RHUA, "cds", force=True)
         ConMgr.remove_ssh_keys(RHUA)
