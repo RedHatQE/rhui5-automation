@@ -402,11 +402,44 @@ class RHUIManagerCLI():
         Expect.expect_retval(connection, f"rhua rhui-manager repo set_retain_versions {opts}")
 
     @staticmethod
-    def repo_orphan_cleanup(connection):
+    def repo_orphan_cleanup(connection,
+                            orphan_protection_time=0,
+                            batch_size=0,
+                            max_batches=0,
+                            dry_run=False):
         '''
-        schedule a task to clean up orphaned artifacts
+        schedule tasks to clean up orphaned artifacts
         '''
-        Expect.expect_retval(connection, "rhua rhui-manager repo orphan_cleanup")
+        cmd = "rhua rhui-manager repo orphan_cleanup"
+        if orphan_protection_time:
+            cmd += f" --orphan_protection_time={orphan_protection_time}"
+        if batch_size:
+            cmd += f" --batch_size={batch_size}"
+        if max_batches:
+            cmd += f" --max_batches={max_batches}"
+        if dry_run:
+            cmd += " --dry_run"
+        Expect.expect_retval(connection, cmd, timeout=300)
+
+    @staticmethod
+    def repo_symlink_cleanup(connection,
+                             symlink_path="",
+                             verbose=False,
+                             deep_scan=False,
+                             dry_run=False):
+        '''
+        clean up dangling symlinks (having cleaned up orphans)
+        '''
+        cmd = "rhua rhui-manager repo symlink_cleanup"
+        if symlink_path:
+            cmd += f" --symlink_path={symlink_path}"
+        if verbose:
+            cmd += " --verbose"
+        if deep_scan:
+            cmd += " --deep_scan"
+        if dry_run:
+            cmd += " --dry_run"
+        Expect.expect_retval(connection, cmd, timeout=300)
 
     @staticmethod
     def repo_tmpfiles_cleanup(connection, directory="", min_age=None, expect_trouble=False):

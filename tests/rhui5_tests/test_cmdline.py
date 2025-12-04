@@ -815,6 +815,34 @@ class TestCLI():
         nose.tools.ok_(len(errors) == 0, msg="\n\n".join(errors))
 
     @staticmethod
+    def test_55_symlink_cleanup():
+        '''check if rhui-manager can have dangling symlinks removed'''
+        # first, clean up orphans
+        RHUIManagerCLI.repo_orphan_cleanup(RHUA)
+        time.sleep(10)
+        # determine current symlinks
+        symlinks_before = Helpers.get_symlinks(RHUA)
+        nose.tools.ok_(symlinks_before, msg="no symlinks found, can't test their removal")
+        # have only the repodata symlinks removed (default execution)
+        RHUIManagerCLI.repo_symlink_cleanup(RHUA)
+        time.sleep(10)
+        # check if there are no repodata symlinks but still some RPM symlinks
+        symlinks_after = Helpers.get_symlinks(RHUA)
+        nose.tools.ok_(symlinks_after, msg="no symlinks found after removing repodata symlinks")
+        symlinks_repodata = [symlink for symlink in symlinks_after if "/repodata/" in symlink]
+        nose.tools.ok_(not symlinks_repodata, msg=f"leftover symlinks found: {symlinks_after}")
+        # have all repodata symlinks removed
+        RHUIManagerCLI.repo_symlink_cleanup(RHUA, deep_scan=True)
+        time.sleep(10)
+        # check if there are no symlinks
+        symlinks_after_2 = Helpers.get_symlinks(RHUA)
+        nose.tools.ok_(not symlinks_after_2, msg=f"leftover symlinks found: {symlinks_after_2}")
+        # check the log
+        random_symlink = random.choice(symlinks_before)
+        cmd = f"grep 'Removed dangling symlink.*{random_symlink}' /var/lib/rhui/root/.rhui/rhui.log"
+        Expect.expect_retval(RHUA, cmd)
+
+    @staticmethod
     def test_99_cleanup():
         '''cleanup: remove temporary files'''
         rmtree(TMPDIR_LOCAL)

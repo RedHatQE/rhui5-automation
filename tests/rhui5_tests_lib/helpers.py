@@ -149,6 +149,15 @@ class Helpers():
         return artifacts
 
     @staticmethod
+    def get_symlinks(connection):
+        """return a list of all symlinks to artifacts"""
+        basedir = f"{RHUI_ROOT}/symlinks/pulp/content/"
+        _, stdout, _ = connection.exec_command(f"find {basedir} -type l")
+        symlinks_full_paths = stdout.read().decode().splitlines()
+        symlinks = [symlink.replace(basedir, "") for symlink in symlinks_full_paths]
+        return symlinks
+
+    @staticmethod
     def clear_symlinks(connection):
         """clear the symlinks to artifacts"""
         Expect.expect_retval(connection, f"rm -rf {RHUI_ROOT}/symlinks/pulp")
