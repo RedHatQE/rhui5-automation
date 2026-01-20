@@ -16,8 +16,6 @@ import re
 import boto3
 import yaml
 
-instance_types = {"arm64": "t4g.large", "x86_64": "m5.large"}
-
 argparser = argparse.ArgumentParser(description='Create CloudFormation stack for RHUI 5',
                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 argparser.add_argument('--name', help='common name for stack members', default='rhui5')
@@ -67,9 +65,9 @@ argparser.add_argument('--ami-9-arm64-override', help='RHEL 9 ARM64 AMI ID to ov
 argparser.add_argument('--ami-10-arm64-override', help='RHEL 10 ARM64 AMI ID to override the mapping', metavar='ID')
 argparser.add_argument('--ansible-ssh-extra-args', help='Extra arguments for SSH connections established by Ansible', metavar='ARGS')
 argparser.add_argument('--key-pair-name', help='the name of the key pair in the given AWS region, if your local user name differs and SSH configuraion is undefined in the yaml config file')
+argparser.add_argument('--small', help='launch small instance types', action='store_const', const=True, default=False)
 
 args = argparser.parse_args()
-
 
 fs_type = "rhua"
 
@@ -91,6 +89,7 @@ if args.cli_all:
 if args.cli_only:
     args.launchpad_os = args.cds = args.haproxy = 0
     fs_type = ""
+    args.small = True
 
 if args.boxed:
     args.cds = args.haproxy = 0
@@ -132,6 +131,9 @@ json_dict['AWSTemplateFormatVersion'] = '2010-09-09'
 
 if args.nfs:
     fs_type = "nfs"
+
+instance_types = {"arm64": "t3g.small" if args.small else "t4g.large",
+                  "x86_64": "t3.small" if args.small else "m5.large"}
 
 if args.cli7 == -1:
     args.cli7 = len(instance_types)
