@@ -64,6 +64,9 @@ PRS.add_argument("--auth",
                  help=f"optional registry auth file; an absolute path, or a file in {RHUI_DIR}, or " \
                       f"'_' as an alias for auth.json in {RHUI_DIR}",
                  metavar="file")
+PRS.add_argument("--creds-in-answers",
+                 help="supply registry credentials in the answers file",
+                 action="store_true")
 PRS.add_argument("--tests",
                  help="RHUI test to run",
                  metavar="test name or category")
@@ -182,6 +185,10 @@ if ARGS.boxed:
 
 if ARGS.local_content:
     EVARS += " local_content=True"
+
+if ARGS.creds_in_answers:
+    ARGS.answers = ARGS.answers or "_"
+    EVARS += " creds_in_answers=True"
 
 if ARGS.answers:
     if ARGS.answers.startswith("/"):

@@ -148,6 +148,29 @@ specified the following ways:
 
 The deployment fails if the `--auth` argument is used with a file that does not exist.
 
+Credentials in an answers file
+------------------------------
+Alternatively, the registry password (and/or the username) can be kept in an answers file, which
+is mentioned above. This is especially useful when the password contains special characters that
+would otherwise confuse the Ansible modules that the RHUI 5 deployment playbook uses. Therefore,
+for example, if the registry password contains a colon followed by a space, the installation can
+only work if the answers file is created as follows:
+
+```
+rhua:
+  podman_password: "foo: bar"
+```
+
+In addition, to make the deployment take the password from here rather than from the credentials
+file -- which still needs to contain this password (!!!) -- the deployment script must be called
+with the following option:
+
+```
+--creds-in-answers
+```
+
+The default answers file will be used unless `--answers <filename>` is also supplied.
+
 RHUI-in-a-box
 -------------
 As described in the README file for the stack creation script, a compact RHUI environment with

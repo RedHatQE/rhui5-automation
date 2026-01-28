@@ -38,7 +38,7 @@
       {% if rhua_image is defined %}
       --rhua-container-image {{ rhua_image }}
       {% endif %}
-      {% if auth is not defined %}
+      {% if auth is not defined and not creds_in_answers | default(False) %}
       --podman-username {{ registry['username'] }}
       --podman-password {{ registry['password'] }}
       {% endif %}
