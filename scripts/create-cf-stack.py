@@ -132,7 +132,7 @@ json_dict['AWSTemplateFormatVersion'] = '2010-09-09'
 if args.nfs:
     fs_type = "nfs"
 
-instance_types = {"arm64": "t3g.small" if args.small else "t4g.large",
+instance_types = {"arm64": "t4g.medium" if args.small else "t4g.large",
                   "x86_64": "t3.small" if args.small else "m5.large"}
 
 if args.cli7 == -1:
