@@ -3,7 +3,7 @@
 # tasks to save the RHUA image
 - name: save the image
   containers.podman.podman_save:
-    image: rhua
+    image: rhua-rhel9
     dest: /export/rhua-image.tar
   become_user: rhui
   tags: rhua,save
