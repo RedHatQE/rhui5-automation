@@ -26,10 +26,15 @@
     dev: "/dev/{{ lsblk.stdout }}"
   tags: nfs
 
+- name: determine the volume UUID
+  command: "blkid /dev/{{ lsblk.stdout }} -s UUID -o value"
+  register: blkid
+  tags: nfs
+
 - name: mount storage volume filesystem
   mount:
     path: /export
-    src: "/dev/{{ lsblk.stdout }}"
+    src: "UUID={{ blkid.stdout }}"
     fstype: xfs
     state: mounted
   tags: nfs
