@@ -60,7 +60,7 @@ class RHUIManagerCLIInstance():
         default_image = default_cds_image if node_type == "cds" else default_haproxy_image
 
         cmd += f" --container_registry {registry}"
-        if not auth_exists:
+        if not auth_exists and username and password:
             cmd += f" --registry_username {username}"
             cmd += f" --registry_password {password}"
         if image:

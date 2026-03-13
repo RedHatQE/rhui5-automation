@@ -86,6 +86,7 @@ password=YOUR_RH_PASSWORD
 # if using a non-default container registry and images, add the following section:
 [registry]
 hostname=RHUI_CONTAINER_REGISTRY_HOSTNAME
+# if the registry requires credentials (most registries do), supply them as follows:
 username=YOUR_REGISTRY_USERNAME
 password=YOUR_REGISTRY_PASSWORD
 # if the registry uses a self-signed SSL certificate, then:

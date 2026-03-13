@@ -139,7 +139,7 @@
     password: "{{ registry['password'] }}"
     tlsverify: "{{ not registry['insecure'] | default(False) | bool or copyrhcacert is defined and copyrhcacert is success }}"
   become: "{{ ansible_os_family in families_that_need_root_for_containers }}"
-  when: ansible_distribution not in distros_that_need_docker
+  when: ansible_distribution not in distros_that_need_docker and registry['username']
   tags: launchpad
 
 - name: log in to the registry using docker
@@ -147,7 +147,7 @@
     registry_url: "{{ registry['hostname'] }}"
     username: "{{ registry['username'] }}"
     password: "{{ registry['password'] }}"
-  when: ansible_distribution in distros_that_need_docker
+  when: ansible_distribution in distros_that_need_docker and registry['username']
   tags: launchpad
 
 - name: launch the installer using podman

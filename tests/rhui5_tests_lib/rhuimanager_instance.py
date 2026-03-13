@@ -115,7 +115,7 @@ class RHUIManagerInstance():
         Expect.enter(connection, image or default_image)
         Expect.expect(connection, "Optional username")
         Expect.enter(connection, "" if auth_exists else username)
-        if not auth_exists:
+        if not auth_exists and password:
             Expect.expect(connection, "Password to log")
             Expect.enter(connection, password)
         state = Expect.expect_list(connection, [

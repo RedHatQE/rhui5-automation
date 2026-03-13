@@ -46,14 +46,10 @@ class Config():
             section = "registry"
             if not creds_cfg.has_option(section, "hostname"):
                 raise RuntimeError(f"hostname does not exist inside 'registry' in {CREDS}")
-        if not creds_cfg.has_option(section, "username"):
-            raise RuntimeError(f"username does not exist inside '{section}' in {CREDS}")
-        if not creds_cfg.has_option(section, "password"):
-            raise RuntimeError(f"password does not exist inside '{section}' in {CREDS}")
         credentials = [OFFICIAL_REGISTRY if section == "rh" else creds_cfg.get(section,
                                                                                "hostname"),
-                       creds_cfg.get(section, "username"),
-                       creds_cfg.get(section, "password"),
+                       creds_cfg.get(section, "username", fallback=""),
+                       creds_cfg.get(section, "password", fallback=""),
                        creds_cfg.get(section,
                                      "installer_image",
                                      fallback="rhui5/installer-rhel9"),
