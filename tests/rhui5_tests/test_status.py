@@ -28,6 +28,8 @@ logging.basicConfig(level=logging.DEBUG)
 OK = 0
 REPO_SYNC_ERROR = 1
 CDS_EMERG_WARN = 2
+FRESHNESS_CDN_UNREACHABLE = 8
+FRESHNESS_MISCONFIGURED = 16
 CERT_WARN = 32
 CERT_ERROR = 64
 SERVICE_ERROR = 128
@@ -40,6 +42,8 @@ CDS = ConMgr.connect(CDS_HOSTNAME)
 
 CMD = "rhua rhui-manager status --code"
 TIMEOUT = 60
+
+FRESH_CMD = f"{CMD} --freshness"
 
 MACH_READ_CMD = "rhua rhui-manager status --repo_json"
 MACH_READ_FILE = "/tmp/repo_status.json"
@@ -73,14 +77,17 @@ class TestRhuiManagerStatus():
         Expect.expect_retval(RHUA, CMD, expected_exit_code, TIMEOUT)
 
     def test_02_add_repos(self):
-        """add test repos"""
-        RHUIManagerCLI.repo_add_by_repo(RHUA, [self.good_repo, self.bad_repo])
+        """add the good test repo"""
+        RHUIManagerCLI.repo_add_by_repo(RHUA, [self.good_repo])
 
     @staticmethod
     def test_03_status():
-        """run the status command with unsynced repos"""
+        """run the status command with the unsynced repo"""
         expected_exit_code = OK
         Expect.expect_retval(RHUA, CMD, expected_exit_code, TIMEOUT)
+        # also check the freshness at this point, expect "misconfiguration"
+        expected_exit_code = FRESHNESS_MISCONFIGURED
+        Expect.expect_retval(RHUA, FRESH_CMD, expected_exit_code, TIMEOUT)
 
     @staticmethod
     def test_04_add_cds_hap():
@@ -100,12 +107,18 @@ class TestRhuiManagerStatus():
         RHUIManagerCLI.repo_sync(RHUA, self.good_repo)
         expected_exit_code = OK
         Expect.expect_retval(RHUA, CMD, expected_exit_code, TIMEOUT)
+        # also check the freshness at this point, expect success
+        Expect.expect_retval(RHUA, FRESH_CMD, expected_exit_code, TIMEOUT)
 
-    def test_07_sync_check_bad_repo(self):
-        """sync the bad repo and expect a bad status"""
+    def test_07_add_sync_check_bad_repo(self):
+        """add and sync the bad repo and expect a bad status"""
+        RHUIManagerCLI.repo_add_by_repo(RHUA, [self.bad_repo])
         RHUIManagerCLI.repo_sync(RHUA, self.bad_repo, False)
         expected_exit_code = REPO_SYNC_ERROR
         Expect.expect_retval(RHUA, CMD, expected_exit_code, TIMEOUT)
+        # also check the freshness at this point, expect "CDN unreachable" and "misconfiguration"
+        expected_exit_code = FRESHNESS_CDN_UNREACHABLE + FRESHNESS_MISCONFIGURED
+        Expect.expect_retval(RHUA, FRESH_CMD, expected_exit_code, TIMEOUT)
 
     @staticmethod
     def test_08_check_expiration():

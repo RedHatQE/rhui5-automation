@@ -55,6 +55,7 @@ def test_04_rerun_installer():
     '''
     RHUIInstaller.rerun()
     time.sleep(30)
+    RHUIManager.initial_run(RHUA)
 
 def test_05_reset_password():
     '''

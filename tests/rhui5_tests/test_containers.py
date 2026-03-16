@@ -196,6 +196,7 @@ class TestClient():
         Config.restore_rhui_tools_conf(RHUA)
         RHUIInstaller.rerun()
         time.sleep(30)
+        RHUIManager.initial_run(RHUA)
         ancestor = f"{HA_HOSTNAME}/{self.container_id}:latest"
         Expect.expect_retval(CLI, f"podman rm -f $(podman ps -a -f ancestor={ancestor} -q)")
         to_remove = [self.container_id, Util.safe_pulp_repo_name(self.container_quay["name"])]

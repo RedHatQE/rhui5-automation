@@ -686,8 +686,9 @@ class TestCLI():
     @staticmethod
     def test_48_rhui_scripts():
         '''test argument handling in rhui-* scripts'''
-        scripts = ["rhui-export-repos", "rhui-subscription-sync"]
+        scripts = ["rhui-export-repos", "rhui-purge-upload-dirs", "rhui-subscription-sync"]
         logs = ["/var/log/rhui/rhui-export-repos.log",
+                "/var/log/rhui/rhui-purge-upload-dirs.log",
                 "/var/log/rhui/rhui-subscription-sync.log"]
         bad_config = "/etc/motd"
         bad_sync_config = "/etc/ansible/ansible.cfg"

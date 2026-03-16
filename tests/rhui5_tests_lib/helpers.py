@@ -102,7 +102,7 @@ class Helpers():
         connection.sftp.put(local_ca_file, f"/var/lib/rhui/root/{ca_basename}")
         Expect.expect_retval(connection, f"cds mkdir -p {LEGACY_CA_DIR}")
         Expect.expect_retval(connection, f"cds mv /root/{ca_basename} {LEGACY_CA_DIR}")
-        Config.set_rhui_tools_conf(connection, "rhui", "log_level", "DEBUG", False)
+        Config.set_rhui_tools_conf(connection, "logging", "log_level", "DEBUG")
         Expect.expect_retval(connection, "cds rhui-services-restart")
 
     @staticmethod
@@ -110,7 +110,7 @@ class Helpers():
         """unconfigure legacy CA certificates"""
         # this method purges the legacy CA dir on a CDS
         Expect.expect_retval(connection, f"cds rm -rf {LEGACY_CA_DIR}")
-        Config.set_rhui_tools_conf(connection, "rhui", "log_level", "INFO", False)
+        Config.restore_rhui_tools_conf(connection)
         Expect.expect_retval(connection, "cds yum -y install logrotate")
         Expect.expect_retval(connection, "cds logrotate -f /etc/logrotate.d/nginx")
         Expect.expect_retval(connection, "cds rhui-services-restart")
