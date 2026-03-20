@@ -79,6 +79,7 @@ class TestRHUIWithoutRHUA():
         Config.set_rhui_tools_conf(RHUA, "rhui", "fetch_missing_symlinks", "False", False)
         RHUIInstaller.rerun()
         time.sleep(30)
+        RHUIManager.initial_run(RHUA)
 
     @staticmethod
     def test_03_add_cds():
@@ -190,6 +191,7 @@ class TestRHUIWithoutRHUA():
         Config.restore_rhui_tools_conf(RHUA)
         RHUIInstaller.rerun()
         time.sleep(30)
+        RHUIManager.initial_run(RHUA)
         RHUIManagerRepo.delete_all_repos(RHUA)
         RHUIManagerInstance.delete_all(RHUA, "cds")
         RHUIManagerInstance.delete_all(RHUA, "loadbalancers")
