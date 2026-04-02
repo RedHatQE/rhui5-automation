@@ -67,6 +67,9 @@ PRS.add_argument("--auth",
 PRS.add_argument("--creds-in-answers",
                  help="supply registry credentials in the answers file",
                  action="store_true")
+PRS.add_argument("--kube",
+                 help="minikube deployment",
+                 action="store_true")
 PRS.add_argument("--tests",
                  help="RHUI test to run",
                  metavar="test name or category")
@@ -221,6 +224,9 @@ if ARGS.auth:
         else:
             print(joint + " does not exist.")
             sys.exit(1)
+
+if ARGS.kube:
+    EVARS += " kube=True"
 
 # provided that the RHEL X Beta string is NOT a URL,
 # see if the configuration contains templates for RHEL Beta baseurls;

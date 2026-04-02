@@ -65,7 +65,7 @@
     user: root
     state: present
   delegate_to: "{{ item }}"
-  with_items: "{{ groups['CDS'] + groups['HAPROXY'] + groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'] + groups['CLI']|default([]) + groups['LAUNCHPAD'] }}"
+  with_items: "{{ groups['CDS']|default([]) + groups['HAPROXY'] + groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'] + groups['CLI']|default([]) + groups['LAUNCHPAD'] }}"
   tags: tests
   
 - name: upload files containing auxiliary files that might be needed for some tests (e.g. entitlement certificate, RPMs for custom repos) 
@@ -125,7 +125,7 @@
     state: present
     use: "{{ ansible_facts['pkg_mgr'] }}"
   delegate_to: "{{ item }}"
-  with_items: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'] + groups['CDS'] }}"
+  with_items: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'] + groups['CDS']|default([]) }}"
   tags: tests
 
 - name: upload Red Hat credentials

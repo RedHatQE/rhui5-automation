@@ -1,0 +1,5 @@
+#!/bin/bash
+minikube tunnel --bind-address={{ hostvars[groups['HAPROXY'][0]]['ansible_all_ipv4_addresses'][0] }} &
+sleep 10
+minikube addons enable metrics-server
+minikube dashboard --url --port=45555 &

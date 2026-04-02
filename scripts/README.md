@@ -182,6 +182,13 @@ script, which will then omit the NFS server from the inventory file and the extr
 content, which is normally created and attached either on the RHUA itself or on a separate NFS
 server. Check the [deployment README](../deploy/README.md) file for further information.
 
+### RHUI with K8s/minikube
+RHUI can be used with Kubernetes instead of traditional CDS and HAProxy nodes. To test that, the
+stack creation script can be instructed not to launch any CDS VMs and to use an instance type for
+the future minukube node that's powerful enough. Note that this node is placed in the HAPROXY
+system group in the inventory file. Check the [deployment README](../deploy/README.md) file for
+further information.
+
 ### How to delete stack
 
 Stack can be deleted "all in one" with CloudFormation. On the AWS amazon web page go to the

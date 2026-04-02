@@ -1,0 +1,6 @@
+---
+# file: k8s_yaml.yml
+# playbook to generate and copy the k8s configuration YAML file
+- hosts: RHUA HAPROXY
+  roles:
+    - k8s
