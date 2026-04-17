@@ -53,15 +53,18 @@ PRS.add_argument("--extra-files",
                  default=join(RHUI_DIR, "extra_files.zip"),
                  metavar="file")
 PRS.add_argument("--credentials",
-                 help="configuration file with credentials",
+                 help="configuration file with credentials; an absolute path, or "\
+                      f"credentials-<file>.conf in {RHUI_DIR}",
                  default=join(RHUI_DIR, "credentials.conf"),
                  metavar="file")
 PRS.add_argument("--answers",
-                 help=f"optional answers file; an absolute path, or a file in {RHUI_DIR}, or " \
+                 help=f"optional answers file; an absolute path, or " \
+                      f"answers-<file>.yaml in {RHUI_DIR}, or " \
                       f"'_' as an alias for answers.yaml in {RHUI_DIR}",
                  metavar="file")
 PRS.add_argument("--auth",
-                 help=f"optional registry auth file; an absolute path, or a file in {RHUI_DIR}, or " \
+                 help=f"optional registry auth file; an absolute path, or " \
+                      f"auth-<file>.json in {RHUI_DIR}, or " \
                       f"'_' as an alias for auth.json in {RHUI_DIR}",
                  metavar="file")
 PRS.add_argument("--creds-in-answers",
@@ -127,6 +130,9 @@ if not ARGS.inventory:
 if not exists(ARGS.inventory):
     print(ARGS.inventory + " does not exist.")
     sys.exit(1)
+
+if ARGS.credentials[0] not in ("~", "/"):
+    ARGS.credentials = join(RHUI_DIR, f"credentials-{ARGS.credentials}.conf")
 
 if not exists(expanduser(ARGS.credentials)):
     print(ARGS.credentials + " does not exist.")
@@ -194,36 +200,24 @@ if ARGS.creds_in_answers:
     EVARS += " creds_in_answers=True"
 
 if ARGS.answers:
-    if ARGS.answers.startswith("/"):
-        if exists(ARGS.answers):
-            EVARS += " answers=" + ARGS.answers
-        else:
-            print(ARGS.answers + " does not exist.")
-            sys.exit(1)
+    if ARGS.answers[0] not in ("~", "/"):
+        ARGS.answers = "answers.yaml" if ARGS.answers == "_" else f"answers-{ARGS.answers}.yaml"
+    ARGS.answers = expanduser(join(RHUI_DIR, ARGS.answers))
+    if exists(ARGS.answers):
+        EVARS += " answers=" + ARGS.answers
     else:
-        answersfile = "answers.yaml" if ARGS.answers == "_" else ARGS.answers
-        joint = expanduser(join(RHUI_DIR, answersfile))
-        if exists(joint):
-            EVARS += " answers=" + joint
-        else:
-            print(joint + " does not exist.")
-            sys.exit(1)
+        print(ARGS.answers + " does not exist.")
+        sys.exit(1)
 
 if ARGS.auth:
-    if ARGS.auth.startswith("/"):
-        if exists(ARGS.auth):
-            EVARS += " auth=" + ARGS.auth
-        else:
-            print(ARGS.auth + " does not exist.")
-            sys.exit(1)
+    if ARGS.auth[0] not in ("~", "/"):
+        ARGS.auth = "auth.json" if ARGS.auth == "_" else f"auth-{ARGS.auth}.json"
+    ARGS.auth = expanduser(join(RHUI_DIR, ARGS.auth))
+    if exists(ARGS.auth):
+        EVARS += " auth=" + ARGS.auth
     else:
-        authfile = "auth.json" if ARGS.auth == "_" else ARGS.auth
-        joint = expanduser(join(RHUI_DIR, authfile))
-        if exists(joint):
-            EVARS += " auth=" + joint
-        else:
-            print(joint + " does not exist.")
-            sys.exit(1)
+        print(ARGS.auth + " does not exist.")
+        sys.exit(1)
 
 if ARGS.kube:
     EVARS += " kube=True"
