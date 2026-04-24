@@ -111,3 +111,34 @@ class RHUIManagerCLIInstance():
         if force:
             cmd += " --force"
         return connection.recv_exit_status(cmd, timeout=180) == 0
+
+    @staticmethod
+    def k8s(connection, key="", crt="", inject="", raw=False):
+        '''
+        Run the rhui-manager command that creates a YAML file for K8s.
+        The "raw" parameter means that the "inject" parameter will be passed verbatim.
+        Otherwise, the "inject" parameter is a list of lists with some sane defaults; use at least:
+        [["/foo"]]
+        and /foo will be injected as /foo with the default permission bits.
+        Returns a dict with "playbook" as the output from the underlying playbook,
+        and "yaml" as the generated configuration.
+        '''
+        cmd = "rhua rhui-manager cds k8s"
+        if key:
+            cmd += f" --user_supplied_ssl_key {key}"
+        if crt:
+            cmd += f" --user_supplied_ssl_crt {crt}"
+        if inject:
+            if raw:
+                cmd += f" --inject {inject}"
+            else:
+                files = []
+                for filespec in inject:
+                    speclen = len(filespec)
+                    toinject = f"{filespec[0]}:{filespec[1] if speclen > 1 else filespec[0]}"
+                    if speclen > 2:
+                        toinject += f":{filespec[2]}"
+                    files.append(toinject)
+                cmd += f" --inject {','.join(files)}"
+        _, stdout, stderr = connection.exec_command(cmd)
+        return {"playbook": stderr.read().decode(), "yaml": stdout.read().decode()}

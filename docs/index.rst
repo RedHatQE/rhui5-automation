@@ -23,6 +23,7 @@ Welcome to the RHUI 5 Test Plan!
    gpg
    hap
    hap_cmd
+   k8s_configuration
    pulp_workers
    repo_management
    repo_prefix
