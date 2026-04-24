@@ -75,6 +75,19 @@ def test_04_invalid_url():
                          f"{log}*",
                          1)
 
+def test_05_undesired_egress():
+    """check for admitted egress involving a third party"""
+    # Pulp analytics are suppossed to be disabled
+    # First check the settings
+    settings = "/var/lib/rhui/config/pulp/settings.py"
+    Expect.expect_retval(RHUA, rf"grep -i 'analytics\s*=\s*false' {settings}")
+    # Then check the logs
+    log = "/var/lib/rhui/log/pulp/worker.log"
+    Expect.expect_retval(RHUA,
+                         "zgrep 'Submitted analytics' "
+                         f"{log}*",
+                         1)
+
 def test_99_cleanup():
     """clean up"""
     if not getenv("RHUISKIPSETUP"):
