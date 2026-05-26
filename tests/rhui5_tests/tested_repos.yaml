@@ -44,21 +44,21 @@ yum_repos:
             test_package: "zhongyi-song-fonts"
     9:
         x86_64:
-            name: "Red Hat Enterprise Linux 9 for x86_64 - Supplementary (RPMs) from RHUI"
+            name: "Red Hat Enterprise Linux 9 for x86_64 - Extensions (RPMs) from RHUI"
             version: "9"
             kind: "Yum"
-            path: "content/dist/rhel9/rhui/9/x86_64/supplementary/os"
-            id: "rhel-9-for-x86_64-supplementary-rhui-rpms-9"
-            label: "rhel-9-for-x86_64-supplementary-rhui-rpms"
-            test_package: "zhongyi-song-fonts"
+            path: "content/dist/rhel9/rhui/9/x86_64/extensions/os"
+            id: "rhel-9-for-x86_64-extensions-rhui-rpms-9"
+            label: "rhel-9-for-x86_64-extensions-rhui-rpms"
+            test_package: "nmon"
         aarch64:
-            name: "Red Hat Enterprise Linux 9 for ARM 64 - Supplementary (RPMs) from RHUI"
+            name: "Red Hat Enterprise Linux 9 for ARM 64 - Extensions (RPMs) from RHUI"
             version: "9"
             kind: "Yum"
-            path: "content/dist/rhel9/rhui/9/aarch64/supplementary/os"
-            id: "rhel-9-for-aarch64-supplementary-rhui-rpms-9"
-            label: "rhel-9-for-aarch64-supplementary-rhui-rpms"
-            test_package: "zhongyi-song-fonts"
+            path: "content/dist/rhel9/rhui/9/aarch64/extensions/os"
+            id: "rhel-9-for-aarch64-extensions-rhui-rpms-9"
+            label: "rhel-9-for-aarch64-extensions-rhui-rpms"
+            test_package: "nmon"
     10:
         x86_64:
             name: "Red Hat Enterprise Linux 10 for x86_64 - Supplementary (RPMs) from RHUI"
