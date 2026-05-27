@@ -24,6 +24,7 @@ Welcome to the RHUI 5 Test Plan!
    hap
    hap_cmd
    k8s_configuration
+   omit_cacert
    pulp_workers
    repo_management
    repo_prefix

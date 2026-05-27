@@ -303,13 +303,14 @@ class TestCLI():
 
     @staticmethod
     def test_22_create_cli_config_rpm():
-        '''create a client configuration RPM'''
+        '''create a client configuration RPM, using a proxy value and omitting the SSL CA cert'''
         RHUIManagerCLI.client_rpm(RHUA,
                                   [f"{TMPDIR}/{CLI_CFG[0]}.key", f"{TMPDIR}/{CLI_CFG[0]}.crt"],
                                   CLI_CFG,
                                   TMPDIR,
                                   [CUSTOM_REPOS[0]],
-                                  "_none_")
+                                  "_none_",
+                                  False)
         # check if the rpm was created
         conf_rpm = f"{TMPDIR_HOST}/{CLI_CFG[0]}-{CLI_CFG[1]}/build/RPMS/noarch/" + \
                    f"{CLI_CFG[0]}-{CLI_CFG[1]}-{CLI_CFG[2]}.noarch.rpm"
@@ -341,15 +342,17 @@ class TestCLI():
         nose.tools.ok_(not bad, msg=f"Unexpected GPG checking configuration for {bad}")
 
     @staticmethod
-    def test_24_ensure_proxy_config():
-        '''ensure that the proxy setting is used in the client configuration'''
+    def test_24_check_extra_config():
+        '''check if the proxy setting is used and the SSL cert is not in the client configuration'''
         # for RHBZ#1658088
+        # for RHBZ#1882697
         # reuse the fetched file if possible
         if not getsize(YUM_REPO_FILE):
             raise RuntimeError("configuration not created, can't test it")
         yum_cfg = ConfigParser()
         yum_cfg.read(YUM_REPO_FILE)
         nose.tools.ok_(all(yum_cfg.get(r, "proxy") == "_none_" for r in yum_cfg.sections()))
+        nose.tools.ok_(all("sslcacert" not in yum_cfg.options(r) for r in yum_cfg.sections()))
 
     @staticmethod
     def test_25_custom_repo_used():
