@@ -88,6 +88,17 @@ def test_05_undesired_egress():
                          f"{log}*",
                          1)
 
+def test_06_wanted_rpms():
+    """check for extra RPMs in the containers that CCSPs asked for"""
+    Expect.expect_retval(RHUA, "rhua rpm -q rpm-sign && rhua rpmsign --version")
+    Expect.expect_retval(RHUA, "rhua rpm -q glibc-all-langpacks")
+    # also check RPMs on CDS & HAProxy nodes, but only if they're configured
+    if CDS.recv_exit_status("systemctl status rhui_cds") == 0:
+        Expect.expect_retval(CDS, "cds rpm -q logrotate && "
+                                  "cds systemctl status logrotate.timer | grep Trigger:")
+        Expect.expect_retval(HAPROXY, "ha rpm -q logrotate && "
+                                      "ha systemctl status logrotate.timer | grep Trigger:")
+
 def test_99_cleanup():
     """clean up"""
     if not getenv("RHUISKIPSETUP"):
