@@ -99,6 +99,22 @@ def test_06_wanted_rpms():
         Expect.expect_retval(HAPROXY, "ha rpm -q logrotate && "
                                       "ha systemctl status logrotate.timer | grep Trigger:")
 
+def test_07_pgsql_locale():
+    """check if PostgreSQL can run with a non-defalt locale setting"""
+    default_locale = "C.UTF-8"
+    other_locale = "ja_JP.UTF-8"
+    pgsql_conf = "/var/lib/pgsql/data/postgresql.conf"
+    restart_cmd = "rhua systemctl restart postgresql"
+    # change the locale
+    Expect.expect_retval(RHUA, f"rhua sed -i s/{default_locale}/{other_locale}/ {pgsql_conf}")
+    # try restarting the service, but only get the exit code so that this test case can continue
+    restart_status = RHUA.recv_exit_status(restart_cmd, timeout=60)
+    # revert
+    Expect.expect_retval(RHUA, f"rhua sed -i s/{other_locale}/{default_locale}/ {pgsql_conf}")
+    Expect.expect_retval(RHUA, restart_cmd)
+    # chech the result only in the end
+    nose.tools.eq_(restart_status, 0)
+
 def test_99_cleanup():
     """clean up"""
     if not getenv("RHUISKIPSETUP"):
