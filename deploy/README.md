@@ -192,6 +192,12 @@ sure to have a stack created accordingly, as described in the stack creation REA
 the `deploy.py` file with the `--local-content` argument. Note that you can combine it with the
 `--boxed` argument, if your stack is created like that.
 
+RHUI with K8s/minikube
+----------------------
+To simplify the deployment of minikube, run the deployment script with the `--kube` argument. The
+script will print test instructions in the end. Note that test options are very limited in this
+case, and several manual steps are necessary, as described in the instructions.
+
 Managed roles
 -------------
 - RHUA

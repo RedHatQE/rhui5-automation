@@ -23,6 +23,9 @@ Welcome to the RHUI 5 Test Plan!
    gpg
    hap
    hap_cmd
+   image_cleanup
+   k8s_configuration
+   omit_cacert
    pulp_workers
    repo_management
    repo_prefix

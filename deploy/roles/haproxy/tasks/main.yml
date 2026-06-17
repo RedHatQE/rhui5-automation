@@ -12,3 +12,7 @@
 - import_tasks: proxy.yml
   when: proxy | default(False)
   tags: proxy
+
+- import_tasks: kube.yml
+  when: kube | default(False)
+  tags: kube

@@ -21,3 +21,5 @@
 - import_playbook: tests.yml
 - import_playbook: postmig.yml
   when: mig | default(False) and not toanotherrhua | default(False)
+- import_playbook: k8s_yaml.yml
+  when: kube | default(False)

@@ -34,6 +34,7 @@ argparser.add_argument('--cds', help='number of CDSes instances', type=int, defa
 argparser.add_argument('--cds-os', help='RHEL version for the CDSes', type=int, default=9)
 argparser.add_argument('--haproxy', help='number of HAProxies', type=int, default=1)
 argparser.add_argument('--haproxy-os', help='RHEL version for the HAProxies', type=int, default=9)
+argparser.add_argument('--kube', help='use a more powerful instance type for the HAProxy node, and no CDS', action='store_const', const=True, default=False)
 argparser.add_argument('--boxed', help='RHUI-in-a-box', action='store_const', const=True, default=False)
 argparser.add_argument('--launchpad-os', help='RHEL version for the launchpad. Practically only 8+.', type=int, default=9)
 argparser.add_argument('--launchpad-ami', help='AMI ID for the launchpad, to test an arbitrary OS. Must be in the given region, and x86_64.')
@@ -134,6 +135,10 @@ if args.nfs:
 
 instance_types = {"arm64": "t4g.medium" if args.small else "t4g.large",
                   "x86_64": "t3.small" if args.small else "m5.large"}
+kube_instance_type = "t2.2xlarge"
+
+if args.kube:
+    args.cds = 0
 
 if args.cli7 == -1:
     args.cli7 = len(instance_types)
@@ -350,7 +355,7 @@ if args.test:
 for i in range(1, args.haproxy + 1):
     json_dict['Resources'][f"haproxy{i}"] = \
         {"Properties": {"ImageId": {"Fn::FindInMap": [f"RHEL{args.haproxy_os}", {"Ref": "AWS::Region"}, "AMI"]},
-                               "InstanceType": instance_types["x86_64"],
+                               "InstanceType": kube_instance_type if args.kube else instance_types["x86_64"],
                                "KeyName": {"Ref": "KeyName"},
                                "SecurityGroups": [{"Ref": "RHUIsecuritygroup"}],
                                "Tags": [{"Key": "Name", "Value": concat_name(f"haproxy{i}")},

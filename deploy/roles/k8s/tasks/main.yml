@@ -1,0 +1,66 @@
+---
+# file: roles/k8s/tasks/main.yml
+# generate and copy the k8s configuration YAML file
+
+- name: generate the k8s configuration file
+  shell: "{{ rhui_manager_notty }} cds k8s --inject /etc/hosts:/etc/hosts > /tmp/test.yaml"
+  become_user: rhui
+  register: k8s_cmd
+  when: inventory_hostname in groups['RHUA']
+  tags: kube
+
+- name: fetch the k8s configuration file
+  fetch:
+    src: /tmp/test.yaml
+    dest: /tmp/
+    flat: True
+  when: inventory_hostname in groups['RHUA']
+  tags: kube
+
+- name: upload the k8s configuration file
+  copy:
+    src: /tmp/test.yaml
+    dest: /tmp/
+  when: inventory_hostname in groups['HAPROXY']
+  tags: kube
+
+- name: apply the k8s configuration file
+  command: minikube kubectl -- apply -f /tmp/test.yaml
+  become: False
+  when: inventory_hostname in groups['HAPROXY']
+  tags: kube
+
+- name: upload the list of additional manual commands
+  template:
+    src: k8s_commands.j2
+    dest: /home/{{ ansible_env.SUDO_USER }}/bin/k8s_commands.sh
+    mode: "755"
+  become: False
+  when: inventory_hostname in groups['HAPROXY']
+  tags: kube
+
+- name: describe the steps to complete the minikube setup
+  debug:
+    msg:
+      - You can now log in using ssh -L 45555:localhost:45555 {{ inventory_hostname }}
+      - Then run k8s_commands.sh
+      - And open http://127.0.0.1:45555/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/
+  when: inventory_hostname in groups['HAPROXY']
+  tags: kube
+
+- name: describe the steps to test the minikube setup
+  debug:
+    msg:
+      - To run tests, first run the following commands on the test machine, ie. --
+      - ssh {{ groups['TEST'][0] }}
+      - sudo su -
+      - rhuitestsetup --cert-only
+      - export RHUISKIPSETUP=1
+      - export RHUIPREP=1
+      - rhuitests client_management
+      - ... and continue on the client machine, ie. --
+      - ssh {{ groups['CLI'][0] }}
+      - sudo yum list available
+  run_once: True
+  when: "'TEST' in groups and 'CLI' in groups"
+  tags: kube

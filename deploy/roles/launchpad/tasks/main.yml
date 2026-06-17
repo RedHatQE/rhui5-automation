@@ -140,7 +140,7 @@
     tlsverify: "{{ not registry['insecure'] | default(False) | bool or copyrhcacert is defined and copyrhcacert is success }}"
   become: "{{ ansible_os_family in families_that_need_root_for_containers }}"
   when: ansible_distribution not in distros_that_need_docker and registry['username']
-  tags: launchpad
+  tags: launchpad,reinstall
 
 - name: log in to the registry using docker
   community.docker.docker_login:
@@ -154,6 +154,7 @@
   containers.podman.podman_container:
     name: rhui_installer_task
     image: "{{ registry['hostname'] }}/{{ installer_image }}"
+    pull: always
     tls_verify: "{{ not registry['insecure'] | default(False) | bool or copyrhcacert is defined and copyrhcacert is success }}"
     rm: True
     interactive: True

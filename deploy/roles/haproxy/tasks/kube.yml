@@ -1,0 +1,28 @@
+# file: roles/haproxy/tasks/kube.yml
+
+- name: deploy minikube
+  block:
+  - name: create the bin directory for the unprivileged user
+    file:
+      path: /home/{{ ansible_env.SUDO_USER }}/bin
+      state: directory
+    become: False
+
+  - name: download minikube
+    get_url:
+      url: https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+      dest: /home/{{ ansible_env.SUDO_USER }}/bin/minikube
+      mode: "755"
+    become: False
+
+  - name: make sure podman is installed
+    package:
+      name: podman
+      state: present
+
+  - name: start minikube
+    command:
+      cmd: minikube start --driver=podman
+      creates: /home/{{ ansible_env.SUDO_USER }}/.kube/config
+    become: False
+  tags: kube

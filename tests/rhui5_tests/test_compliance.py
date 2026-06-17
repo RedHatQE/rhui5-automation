@@ -75,6 +75,46 @@ def test_04_invalid_url():
                          f"{log}*",
                          1)
 
+def test_05_undesired_egress():
+    """check for admitted egress involving a third party"""
+    # Pulp analytics are suppossed to be disabled
+    # First check the settings
+    settings = "/var/lib/rhui/config/pulp/settings.py"
+    Expect.expect_retval(RHUA, rf"grep -i 'analytics\s*=\s*false' {settings}")
+    # Then check the logs
+    log = "/var/lib/rhui/log/pulp/worker.log"
+    Expect.expect_retval(RHUA,
+                         "zgrep 'Submitted analytics' "
+                         f"{log}*",
+                         1)
+
+def test_06_wanted_rpms():
+    """check for extra RPMs in the containers that CCSPs asked for"""
+    Expect.expect_retval(RHUA, "rhua rpm -q rpm-sign && rhua rpmsign --version")
+    Expect.expect_retval(RHUA, "rhua rpm -q glibc-all-langpacks")
+    # also check RPMs on CDS & HAProxy nodes, but only if they're configured
+    if CDS.recv_exit_status("systemctl status rhui_cds") == 0:
+        Expect.expect_retval(CDS, "cds rpm -q logrotate && "
+                                  "cds systemctl status logrotate.timer | grep Trigger:")
+        Expect.expect_retval(HAPROXY, "ha rpm -q logrotate && "
+                                      "ha systemctl status logrotate.timer | grep Trigger:")
+
+def test_07_pgsql_locale():
+    """check if PostgreSQL can run with a non-defalt locale setting"""
+    default_locale = "C.UTF-8"
+    other_locale = "ja_JP.UTF-8"
+    pgsql_conf = "/var/lib/pgsql/data/postgresql.conf"
+    restart_cmd = "rhua systemctl restart postgresql"
+    # change the locale
+    Expect.expect_retval(RHUA, f"rhua sed -i s/{default_locale}/{other_locale}/ {pgsql_conf}")
+    # try restarting the service, but only get the exit code so that this test case can continue
+    restart_status = RHUA.recv_exit_status(restart_cmd, timeout=60)
+    # revert
+    Expect.expect_retval(RHUA, f"rhua sed -i s/{other_locale}/{default_locale}/ {pgsql_conf}")
+    Expect.expect_retval(RHUA, restart_cmd)
+    # chech the result only in the end
+    nose.tools.eq_(restart_status, 0)
+
 def test_99_cleanup():
     """clean up"""
     if not getenv("RHUISKIPSETUP"):

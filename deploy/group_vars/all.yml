@@ -5,3 +5,4 @@ registry:
   password: "{{ lookup('ini', 'password', section=section, file=credentials) }}"
   insecure: "{{ False if use_rh_registry | default(False) else lookup('ini', 'insecure', section=section, file=credentials) }}"
 rhui_manager: podman exec -it rhui5-rhua rhui-manager --noninteractive
+rhui_manager_notty: podman exec rhui5-rhua rhui-manager

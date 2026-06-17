@@ -81,7 +81,7 @@ class Helpers():
         _, stdout, _ = connection.exec_command(get_pids_cmd % " ".join(services[fun]))
         oldpids = list(map(int, stdout.read().decode().splitlines()))
         # actually run the restart script, should exit with 0
-        Expect.expect_retval(connection, f"{fun} rhui-services-restart", timeout=20)
+        Expect.expect_retval(connection, f"{fun} rhui-services-restart", timeout=60)
         # fetch PIDs again
         _, stdout, _ = connection.exec_command(get_pids_cmd % " ".join(services[fun]))
         newpids = list(map(int, stdout.read().decode().splitlines()))
@@ -111,7 +111,6 @@ class Helpers():
         # this method purges the legacy CA dir on a CDS
         Expect.expect_retval(connection, f"cds rm -rf {LEGACY_CA_DIR}")
         Config.restore_rhui_tools_conf(connection)
-        Expect.expect_retval(connection, "cds yum -y install logrotate")
         Expect.expect_retval(connection, "cds logrotate -f /etc/logrotate.d/nginx")
         Expect.expect_retval(connection, "cds rhui-services-restart")
 

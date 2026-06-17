@@ -512,7 +512,8 @@ class RHUIManagerCLI():
                              timeout=60)
 
     @staticmethod
-    def client_rpm(connection, certdata, rpmdata, directory, unprotected_repos=None, proxy=""):
+    def client_rpm(connection, certdata, rpmdata, directory,
+                   unprotected_repos=None, proxy="", ca=True):
         '''
         generate a client configuration RPM
         The certdata argument must be a list, and two kinds of data are supported:
@@ -548,6 +549,8 @@ class RHUIManagerCLI():
             cmd += " --unprotected_repos " + ",".join(unprotected_repos)
         if proxy:
             cmd += " --proxy " + proxy
+        if not ca:
+            cmd += " --omit-repo-sslcacert"
         Expect.expect_retval(connection, cmd, timeout=60)
 
     @staticmethod
