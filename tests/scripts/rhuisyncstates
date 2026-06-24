@@ -44,8 +44,17 @@ PRS.add_argument("--ignore-beta-8",
 PRS.add_argument("--ignore-beta-9",
                  help="ignore errors syncing RHEL 9 Beta repos",
                  action="store_true")
+PRS.add_argument("--ignore-beta-10",
+                 help="ignore errors syncing RHEL 10 Beta repos",
+                 action="store_true")
 PRS.add_argument("--ignore-running",
                  help="ignore repos that are currently being synced",
+                 action="store_true")
+PRS.add_argument("--ignore-disabled",
+                 help="ignore repos with disabled syncs)",
+                 action="store_true")
+PRS.add_argument("--check-wf",
+                 help="check the sync workflow screen for incomplete workflows",
                  action="store_true")
 ARGS = PRS.parse_args()
 
@@ -87,28 +96,36 @@ else:
     if ARGS.ignore_beta_9:
         errors = [line for line in errors if not re.search("Linux 9.*Beta", line) and
                                          "beta/rhel9" not in line]
+    if ARGS.ignore_beta_10:
+        errors = [line for line in errors if not re.search("Linux 10.*Beta", line) and
+                                         "beta/rhel10" not in line]
     if ARGS.ignore_running:
         errors = [line for line in errors if "Running" not in line]
+    if ARGS.ignore_disabled:
+        errors = [line for line in errors if "Unknown" not in line]
+        errors = [line for line in errors if "None" not in line]
 
-# also check the workflow screen
-RHUIManager.screen(RHUA, "sync")
-Expect.enter(RHUA, "wf")
-raw_lines = RHUIManager.list_lines(RHUA, "Enter value", False, 120)
-Expect.enter(RHUA, "b")
-Expect.enter(RHUA, "q")
+# also check the workflow screen, if requested
+if ARGS.check_wf:
+    RHUIManager.screen(RHUA, "sync")
+    Expect.enter(RHUA, "wf")
+    raw_lines = RHUIManager.list_lines(RHUA, "Enter value", False, 120)
+    Expect.enter(RHUA, "b")
+    Expect.enter(RHUA, "q")
+    INCOMPLETE_WORKFLOWS = [line for line in raw_lines[4:] if "✗" in line]
+else:
+    INCOMPLETE_WORKFLOWS = None
 
-incomplete_workflows = [line for line in raw_lines[4:] if "✗" in line]
-
-RET_CODE = ECODE_GOOD
+ret_code = ECODE_GOOD
 
 if errors:
     print("Errors:")
     print("\n".join(errors))
-    RET_CODE |= ECODE_SYNC_ERROR
+    ret_code |= ECODE_SYNC_ERROR
 
-if incomplete_workflows:
+if INCOMPLETE_WORKFLOWS:
     print("Incomplete workflows:")
-    print("\n".join(incomplete_workflows))
-    RET_CODE |= ECODE_INCOMP_WF_ERROR
+    print("\n".join(INCOMPLETE_WORKFLOWS))
+    ret_code |= ECODE_INCOMP_WF_ERROR
 
-sys.exit(RET_CODE)
+sys.exit(ret_code)
