@@ -20,6 +20,21 @@
       name: podman
       state: present
 
+  - name: block for non-prod registries
+    block:
+    - name: create the directory for container certs for minikube
+      file:
+        name: "/home/{{ ansible_env.SUDO_USER }}/.minikube/certs"
+        state: directory
+
+    - name: copy the RH CA cert to this directory
+      copy:
+        src: /etc/rhsm/ca/redhat-uep.pem
+        dest: "/home/{{ ansible_env.SUDO_USER }}/.minikube/certs"
+        remote_src: True
+    when: registry['insecure'] | default(False) | bool
+    become: False
+
   - name: start minikube
     command:
       cmd: minikube start --driver=podman

@@ -36,6 +36,9 @@ PRS.add_argument("--installer-image",
 PRS.add_argument("--rhua-image",
                  help="RHUA image in the registry",
                  default=None)
+PRS.add_argument("--cds-k8s-image",
+                 help="CDS K8s image in the registry",
+                 default=None)
 PRS.add_argument("--rhsm",
                  help="register the RHUA with RHSM",
                  action="store_true")
@@ -142,6 +145,7 @@ IMG_CFG = RawConfigParser()
 IMG_CFG.read(expanduser(ARGS.credentials))
 PRESET_INSTALLER_IMAGE = IMG_CFG.get("registry", "installer_image", fallback=None)
 PRESET_RHUA_IMAGE = IMG_CFG.get("registry", "rhua_image", fallback=None)
+PRESET_CDS_K8S_IMAGE = IMG_CFG.get("registry", "cds_k8s_image", fallback=None)
 
 # start building the command
 CMD = f"ansible-playbook -i {ARGS.inventory} deploy/site.yml --extra-vars '"
@@ -165,6 +169,11 @@ if ARGS.rhua_image:
     EVARS += " rhua_image=" + ARGS.rhua_image
 elif PRESET_RHUA_IMAGE:
     EVARS += " rhua_image=" + PRESET_RHUA_IMAGE
+
+if ARGS.cds_k8s_image:
+     EVARS += " cds_k8s_image=" + ARGS.cds_k8s_image
+elif PRESET_CDS_K8S_IMAGE:
+     EVARS += " cds_k8s_image=" + PRESET_CDS_K8S_IMAGE
 
 if ARGS.rhsm:
     EVARS += " rhsm=True"

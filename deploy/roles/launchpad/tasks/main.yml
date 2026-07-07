@@ -82,7 +82,7 @@
   when: ansible_distribution in distros_that_need_docker
   tags: launchpad
 
-- name: podman block for insecure registries
+- name: podman block for non-default registries
   block:
   - name: create the directory for container certs
     file:
