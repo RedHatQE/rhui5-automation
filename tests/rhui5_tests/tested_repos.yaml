@@ -113,8 +113,8 @@ container_primary:
     id: "rhcert"
     displayname: "RH Certification Container"
 container_cli:
-    name: "ubi8-minimal"
-    displayname: "UBI 8 Minimal"
+    name: "rhui5/haproxy-rhel9"
+    displayname: "RHUI 5 HAProxy"
 container_alt:
     quay:
         name: "pusher/oauth2_proxy"

@@ -12,7 +12,6 @@ import yaml
 
 from rhui5_tests_lib.cfg import Config
 from rhui5_tests_lib.conmgr import ConMgr
-from rhui5_tests_lib.installer import RHUIInstaller
 from rhui5_tests_lib.rhuimanager import RHUIManager
 from rhui5_tests_lib.rhuimanager_client import RHUIManagerClient
 from rhui5_tests_lib.rhuimanager_instance import RHUIManagerInstance
@@ -49,7 +48,7 @@ class TestClient():
         self.arch = Util.get_arch(CLI)
 
         self.container_name = doc["container_cli"]["name"]
-        self.container_id = self.container_name
+        self.container_id = Util.safe_pulp_repo_name(self.container_name)
         self.container_displayname = doc["container_cli"]["displayname"]
 
         self.container_quay = doc["container_alt"]["quay"]
@@ -64,8 +63,6 @@ class TestClient():
     def test_01_init():
         """enable container support, log in to RHUI"""
         Config.set_rhui_tools_conf(RHUA, "container", "container_support_enabled", "True")
-        RHUIInstaller.rerun()
-        time.sleep(30)
         RHUIManager.initial_run(RHUA)
 
     @staticmethod
@@ -194,9 +191,6 @@ class TestClient():
     def test_99_cleanup(self):
         """remove the containers from the client and the RHUA, uninstall HAProxy and CDS"""
         Config.restore_rhui_tools_conf(RHUA)
-        RHUIInstaller.rerun()
-        time.sleep(30)
-        RHUIManager.initial_run(RHUA)
         ancestor = f"{HA_HOSTNAME}/{self.container_id}:latest"
         Expect.expect_retval(CLI, f"podman rm -f $(podman ps -a -f ancestor={ancestor} -q)")
         to_remove = [self.container_id, Util.safe_pulp_repo_name(self.container_quay["name"])]
