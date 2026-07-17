@@ -41,7 +41,7 @@ You need a ZIP file with the following files in the root of the archive:
 * `ANYTHING.tar` — These must be tarballs containing some packages and their `updateinfo.xml.gz` files. The contents will be used for updateinfo testing. Exact names are to be specified in `rhui5_tests/tested_repos.yaml`. One of them must also contain an uncompressed updateinfo file.
 * `legacy_ca.crt` — This must be a CA certificate taken from a different RHUI environment; ie. `/etc/pki/rhui/certs/entitlement-ca.crt` in the case of RHUI 3, or `/etc/pki/rhui/certs/ca.crt` if using a CA cert from RHUI 5. The file will be used in legacy CA testing.
 * `no_rhui_repo_cert/ID.pem, no_rhui_repo_cert/ID-key.pem` — This must be a pair of an entitlement certificate and its key, and the cert must contain only non-RHUI repos.
-* `custom_certs/FILES`: Several files that will be used to test custom CA certificate handling in rhui-installer and custom certificate handling in CDS registration. The following content is expected:
+* `custom_certs/FILES`: Several files that will be used to test custom CA certificate handling in rhui-installer and custom certificate handling in CDS registration. These files should be collected from previously installed RHUI environments so that they differ, except for the SSL certificate and key, which can come from the same RHUI as thc client SSL CA files. The following content is expected:
 
 ```
 custom_certs/

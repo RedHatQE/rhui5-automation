@@ -148,6 +148,13 @@ specified the following ways:
 
 The deployment fails if the `--auth` argument is used with a file that does not exist.
 
+Supplying custom CA files
+-------------------------
+To test the ability to use your own CA files rather than letting RHUI create them, make sure you
+have the `custom_certs` directory in the parent directory of this git clone, and put there the
+files as described in the [tests readme file](../tests/README.md). Then run the deployment script
+with `--custom-certs`.
+
 Credentials in an answers file
 ------------------------------
 Alternatively, the registry password (and/or the username) can be kept in an answers file, which

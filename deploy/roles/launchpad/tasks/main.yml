@@ -12,6 +12,30 @@
 - import_tasks: os_tweaks.yml
   tags: launchpad
 
+- name: block for custom certs
+  block:
+  - name: copy the certs to the launchpad
+    copy:
+      src: ../../../../../custom_certs
+      dest: /tmp/
+    become: "{{ ansible_os_family in families_that_need_root_for_containers }}"
+
+  - name: define cert volumes
+    set_fact:
+      cert_volumes:
+        - /tmp/custom_certs/ca.crt:/rhui-ca.crt:Z
+        - /tmp/custom_certs/ca.key:/rhui-ca.key:Z
+        - /tmp/custom_certs/client_ssl_ca.crt:/client-ssl-ca.crt:Z
+        - /tmp/custom_certs/client_ssl_ca.key:/client-ssl-ca.key:Z
+        - /tmp/custom_certs/client_entitlement_ca.crt:/client-entitlement-ca.crt:Z
+        - /tmp/custom_certs/client_entitlement_ca.key:/client-entitlement-ca.key:Z
+
+  - name: append the cert volumes to the list of volumes
+    set_fact:
+      installer_volumes: "{{ installer_volumes + cert_volumes }}"
+  when: custom_certs | default(False) | bool
+  tags: launchpad,reinstall
+
 - name: block for answers
   block:
   - name: copy the answers file to the launchpad

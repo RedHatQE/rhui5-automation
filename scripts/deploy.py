@@ -70,6 +70,9 @@ PRS.add_argument("--auth",
                       f"auth-<file>.json in {RHUI_DIR}, or " \
                       f"'_' as an alias for auth.json in {RHUI_DIR}",
                  metavar="file")
+PRS.add_argument("--custom-certs",
+                 help=f"install RHUI with custom certificates",
+                 action="store_true")
 PRS.add_argument("--creds-in-answers",
                  help="supply registry credentials in the answers file",
                  action="store_true")
@@ -227,6 +230,9 @@ if ARGS.auth:
     else:
         print(ARGS.auth + " does not exist.")
         sys.exit(1)
+
+if ARGS.custom_certs:
+    EVARS += " custom_certs=True"
 
 if ARGS.kube:
     EVARS += " kube=True"
