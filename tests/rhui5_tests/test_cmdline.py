@@ -1,4 +1,5 @@
 '''RHUI CLI tests'''
+# __tier1
 
 import json
 import logging

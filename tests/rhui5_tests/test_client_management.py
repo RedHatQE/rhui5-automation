@@ -1,4 +1,5 @@
 '''Client management tests'''
+# __tier1
 
 # To skip the upload of an entitlement certificate and the registration of CDS and HAProxy nodes --
 # because you want to save time in each client test case and do this beforehand -- run:

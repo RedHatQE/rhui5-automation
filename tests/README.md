@@ -117,6 +117,7 @@ Where _X_ can be one of:
 
 * `all`: to run all RHUI tests
 * `client`: to run RHUI client tests
+* `tier1`: to run tier 1 RHUI tests (to quickly verify the basic functionality, end-to-end)
 * _name_: to run test\_name\_.py from the [rhui5\_tests](./rhui5\_tests) directory.
 
 Note that it can take a few hours for all the test cases to run.

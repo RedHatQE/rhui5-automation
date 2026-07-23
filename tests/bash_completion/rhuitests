@@ -1,7 +1,7 @@
 #/bin/bash
 _rhuitests_completions() {
   case ${#COMP_WORDS[@]} in
-    2) COMPREPLY=($(compgen -W "$(echo all client ; ls $(rhuitestdir) | egrep -v pyc\|__$ | sed 's/^test_\(.*\)\.py$/\1/')" -- "${COMP_WORDS[1]}")) ;;
+    2) COMPREPLY=($(compgen -W "$(echo all client tier1; ls $(rhuitestdir) | egrep -v pyc\|__$ | sed 's/^test_\(.*\)\.py$/\1/')" -- "${COMP_WORDS[1]}")) ;;
     3) COMPREPLY=($(compgen -W "quiet" -- "${COMP_WORDS[2]}")) ; return ;;
     *) return ;;
   esac

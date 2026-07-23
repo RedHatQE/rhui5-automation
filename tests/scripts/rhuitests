@@ -16,10 +16,15 @@ if [[ $1 == all ]]; then
         exit 1
     fi
     tests_pretty="all tests"
-elif [[ $1 == client ]]; then
-    tests=$(grep -l __reusable_clients_with_cds test_*.py)
+elif [[ $1 == client ]] || [[ $1 == tier1 ]]; then
+    if [[ $1 == client ]]; then
+        pattern="__reusable_clients_with_cds"
+    else
+        pattern="__tier1"
+    fi
+    tests=$(grep -l $pattern test_*.py)
     if [ $? -ne 0 ]; then
-        echo "No client test cases found. The installation of rhui5_tests_lib is broken."
+        echo "No matching test cases found. The installation of rhui5_tests_lib is broken."
         exit 1
     fi
     tests_list=(`echo $tests`)
@@ -52,7 +57,7 @@ elif [[ $1 ]]; then
         exit 1
     fi
 else
-    echo "Usage: $(basename $0) all|client|NAME [quiet]"
+    echo "Usage: $(basename $0) all|client|tier1|NAME [quiet]"
     exit 1
 fi
 
@@ -103,7 +108,7 @@ if [[ $1 == all ]]; then
         nosetests -vs 2>&1 | tee -a $output
         result=${PIPESTATUS[0]}
     fi
-elif [[ $1 == client ]]; then
+elif [[ $1 == client ]] || [[ $1 == tier1 ]]; then
     result=0
     for client in $clients; do
         client_info=$(ssh -i $identity -o StrictHostKeyChecking=no -q $client \
