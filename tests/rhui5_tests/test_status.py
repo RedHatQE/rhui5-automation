@@ -205,6 +205,19 @@ class TestRhuiManagerStatus():
         nose.tools.eq_(len(output), 1)
         nose.tools.eq_(output[0], str(OK))
 
+    @staticmethod
+    def test_15_logrotate_status():
+        """check if the directory for the logrotate status is preserved after restarts"""
+        test_file = "/var/lib/logrotate/foo"
+        Expect.expect_retval(CDS, f"cds touch {test_file}")
+        Expect.expect_retval(HAPROXY, f"ha touch {test_file}")
+        Expect.expect_retval(CDS, "systemctl restart rhui_cds")
+        Expect.expect_retval(HAPROXY, "systemctl restart rhui_haproxy")
+        time.sleep(10)
+        # rm will fail if the file doesn't exist anymore, and clean it up otherwise
+        Expect.expect_retval(CDS, f"cds rm {test_file}")
+        Expect.expect_retval(HAPROXY, f"ha rm {test_file}")
+
     def test_99_cleanup(self):
         """clean up"""
         Expect.expect_retval(RHUA, f"rhua rm -f {MACH_READ_FILE}")
