@@ -8,6 +8,7 @@ import nose
 import yaml
 
 from rhui5_tests_lib.cfg import Config, LEGACY_CA_DIR, RHUI_ROOT
+from rhui5_tests_lib.pulp_api import PulpAPI
 
 class Helpers():
     """actions that may be repeated in specific test cases and do not belong in general utils"""
@@ -137,6 +138,12 @@ class Helpers():
         mapping_file = f"/var/lib/rhui/cache/{cert_files[0]}.mappings"
         Expect.expect_retval(connection,
                              f"cp -a /var/lib/rhui/root/test_files/rhcert.mappings {mapping_file}")
+
+    @staticmethod
+    def wait_for_finished_tasks(connection):
+        """wait until all running tasks are finished"""
+        while PulpAPI.list_tasks(connection, ["running"]):
+            time.sleep(11)
 
     @staticmethod
     def get_artifacts(connection):

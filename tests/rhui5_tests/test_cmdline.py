@@ -733,9 +733,16 @@ class TestCLI():
         # first, check if there are any artifacts
         artifacts = Helpers.get_artifacts(RHUA)
         nose.tools.ok_(artifacts)
-        # have them removed
+        # have some of them removed in batches
+        RHUIManagerCLI.repo_orphan_cleanup(RHUA, batch_size=11, max_batches=2)
+        Helpers.wait_for_finished_tasks(RHUA)
+        # check if there are no errors
+        _, stdout, _ = RHUA.exec_command("tail /var/lib/rhui/root/.rhui/rhui.log | grep -i failed")
+        tail = stdout.read().decode()
+        nose.tools.ok_("ailed" not in tail, msg=tail)
+        # remove the rest of the artifacts, all at once (default)
         RHUIManagerCLI.repo_orphan_cleanup(RHUA)
-        time.sleep(10)
+        Helpers.wait_for_finished_tasks(RHUA)
         # check if there are none
         artifacts = Helpers.get_artifacts(RHUA)
         nose.tools.ok_(not artifacts)
@@ -824,7 +831,7 @@ class TestCLI():
         '''check if rhui-manager can have dangling symlinks removed'''
         # first, clean up orphans
         RHUIManagerCLI.repo_orphan_cleanup(RHUA)
-        time.sleep(10)
+        Helpers.wait_for_finished_tasks(RHUA)
         # determine current symlinks
         symlinks_before = Helpers.get_symlinks(RHUA)
         nose.tools.ok_(symlinks_before, msg="no symlinks found, can't test their removal")

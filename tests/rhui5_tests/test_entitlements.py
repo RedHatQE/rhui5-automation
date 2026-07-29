@@ -189,7 +189,7 @@ class TestEntitlement():
            check if a certificate that won't expire until a few decades later can be used
         '''
         cert = "entcert_longlife.crt"
-        cmd = "rhua python3.11 -c \"from rhsm import certificate;" \
+        cmd = "rhua python3.12 -c \"from rhsm import certificate;" \
                                   f"certificate.create_from_file('{DATADIR}/{cert}')\""
         Expect.expect_retval(RHUA, cmd)
 

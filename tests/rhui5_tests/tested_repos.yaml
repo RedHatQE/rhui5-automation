@@ -237,7 +237,7 @@ comps:
         id: "CRB"
 remote_content:
     rpm: "https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/python3-requests-2.25.1-10.el9.noarch.rpm"
-    ftp: "https://ftp.sh.cvut.cz/fedora/epel/epel-release-latest-9.noarch.rpm"
+    ftp: "ftp://ftp.cica.es/epel/9/Everything/x86_64/Packages/y/yggdrasil-0.3.2-2.el9.x86_64.rpm"
     html_with_links: "https://ftp.redhat.com/pub/redhat/linux/enterprise/9Base/en/Convert2RHEL/SRPMS/"
     no_links: "https://ftp.redhat.com/"
 package_versions:
