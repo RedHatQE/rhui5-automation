@@ -31,6 +31,7 @@ Welcome to the RHUI 5 Test Plan!
    repo_prefix
    retain_package_versions
    retain_repo_versions
+   rhui_api
    rhui_without_rhua
    security
    status
