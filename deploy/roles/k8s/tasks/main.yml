@@ -10,30 +10,51 @@
   when: cds_k8s_image is defined and inventory_hostname in groups['RHUA']
   tags: kube
 
-- name: generate the k8s configuration file
+- name: generate the default k8s configuration file
   shell: "{{ rhui_manager_notty }} cds k8s --inject /etc/hosts:/etc/hosts > /tmp/test.yaml"
   become_user: rhui
-  register: k8s_cmd
   when: inventory_hostname in groups['RHUA']
   tags: kube
 
-- name: fetch the k8s configuration file
+- name: generate the k8s configuration file with a TLS secret
+  shell: "{{ rhui_manager_notty }} cds k8s --ssl_cert_secret_name test --inject /etc/hosts:/etc/hosts > /tmp/test2.yaml"
+  become_user: rhui
+  when: inventory_hostname in groups['RHUA']
+  tags: kube
+
+- name: fetch the k8s configuration files and TLS files
   fetch:
-    src: /tmp/test.yaml
+    src: "{{ item }}"
     dest: /tmp/
     flat: True
+  loop:
+    - /tmp/test.yaml
+    - /tmp/test2.yaml
+    - /export/cds-config/ssl/lb.example.com.crt
+    - /export/cds-config/ssl/lb.example.com.key
   when: inventory_hostname in groups['RHUA']
   tags: kube
 
-- name: upload the k8s configuration file
+- name: upload the k8s configuration files and TLS files
   copy:
-    src: /tmp/test.yaml
+    src: "/tmp/{{ item }}"
     dest: /tmp/
+  loop:
+    - test.yaml
+    - test2.yaml
+    - lb.example.com.crt
+    - lb.example.com.key
   when: inventory_hostname in groups['HAPROXY']
   tags: kube
 
 - name: apply the k8s configuration file
   command: minikube kubectl -- apply -f /tmp/test.yaml
+  become: False
+  when: inventory_hostname in groups['HAPROXY']
+  tags: kube
+
+- name: create the TLS secret in Minikube
+  command: minikube kubectl -- create secret tls test --cert=/tmp/lb.example.com.crt --key=/tmp/lb.example.com.key
   become: False
   when: inventory_hostname in groups['HAPROXY']
   tags: kube
@@ -53,6 +74,9 @@
       - You can now log in using ssh -L 45555:localhost:45555 {{ inventory_hostname }}
       - Then run k8s_commands.sh
       - And open http://127.0.0.1:45555/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/
+      - To switch from the default configuration to the one using a TLS secret, run
+      - minikube kubectl -- delete -f /tmp/test.yaml
+      - minikube kubectl -- apply -f /tmp/test2.yaml
   when: inventory_hostname in groups['HAPROXY']
   tags: kube
 

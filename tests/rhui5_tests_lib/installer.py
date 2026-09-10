@@ -12,7 +12,8 @@ class RHUIInstaller():
               rhua_image="",
               other_args="",
               other_volumes=None,
-              expect_trouble=False):
+              expect_trouble=False,
+              force=True):
         """Rerun the installer (with the given arguments and/or volumes, if provided)"""
         rhua = ConMgr.connect()
         launchpad = ConMgr.connect(ConMgr.get_launchpad_hostname())
@@ -39,6 +40,8 @@ class RHUIInstaller():
             cmd += f"--rhua-container-image {rhua_image} "
         elif default_rhua_image:
             cmd += f"--rhua-container-image {default_rhua_image} "
+        if force:
+            cmd += "--force "
         cmd = f"{cmd}" \
               f"--target-host {ConMgr.get_rhua_hostname()} " \
               f"--target-user {SUDO_USER_NAME} " \

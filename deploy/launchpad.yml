@@ -36,7 +36,7 @@
       --rhua-container-registry {{ registry['hostname'] }}
       {% endif %}
       {% if rhua_image is defined %}
-      --rhua-container-image {{ rhua_image }}
+      --rhua-container-image {{ rhua_image }} --force
       {% endif %}
       {% if auth is not defined and not creds_in_answers | default(False) and registry['username'] %}
       --podman-username {{ registry['username'] }}

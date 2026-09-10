@@ -239,5 +239,15 @@
     var: rhuimanagercmd.stderr_lines
   tags: launchpad,reinstall
 
+- name: check the RHUA image tag
+  command: "podman images --format '{% raw %}{{.Tag}}{% endraw %}'"
+  become_user: rhui
+  delegate_to: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'][0] }}"
+  register: actual_tag
+  failed_when: actual_tag.stdout != expected_rhui_version
+  changed_when: false
+  when: expected_rhui_version is defined
+  tags: launchpad,reinstall,version_check
+
 - import_tasks: ssh_post.yml
   tags: launchpad

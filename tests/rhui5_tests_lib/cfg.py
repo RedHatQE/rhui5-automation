@@ -8,6 +8,7 @@ RHUI_CFG_STATIC = "/etc/rhui-static/rhui-tools-static.conf"
 RHUI_CFG_CUSTOM = "/etc/rhui/rhui-tools.conf"
 RHUI_CFG_HOST = "/var/lib/rhui/*/*/rhui-tools.conf"
 RHUI_CFG_HOST_BAK_DIR = "/var/lib/rhui/root"
+RHUI_CFG_BAK = "rhui-tools.bak"
 
 RHUI_ROOT = "/var/lib/rhui/remote_share"
 CREDS = "/root/test_files/credentials.conf"
@@ -178,7 +179,7 @@ class Config():
     def backup_rhui_tools_conf(connection):
         """create a backup copy of the RHUI tools configuration file"""
         Expect.expect_retval(connection,
-                             f"cp -a {RHUI_CFG_HOST} {RHUI_CFG_HOST_BAK_DIR}/rhui-tools.bak")
+                             f"cp -a {RHUI_CFG_HOST} {RHUI_CFG_HOST_BAK_DIR}/{RHUI_CFG_BAK}")
 
     @staticmethod
     def edit_rhui_tools_conf(connection, opt, val, backup=True):
@@ -193,4 +194,4 @@ class Config():
     def restore_rhui_tools_conf(connection):
         """restore the backup copy of the RHUI tools configuration file"""
         Expect.expect_retval(connection,
-                             f"mv -f {RHUI_CFG_HOST_BAK_DIR}/rhui-tools.bak {RHUI_CFG_HOST}")
+                             f"mv -f {RHUI_CFG_HOST_BAK_DIR}/{RHUI_CFG_BAK} {RHUI_CFG_HOST}")

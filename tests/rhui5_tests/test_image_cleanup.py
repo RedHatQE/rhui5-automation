@@ -89,6 +89,10 @@ class TestImageCleanup():
             output = stdout.read().decode()
             nose.tools.ok_("rhui-container-image-prune.timer" in output, msg=output)
 
+    def test_07_force_rhua_image(self):
+        """check if the installer refuses a non-default RHUA image without --force"""
+        RHUIInstaller.rerun(rhua_image="rhui5/rhua-rhel9:latest", expect_trouble=True, force=False)
+
     def test_99_cleanup(self):
         """clean up"""
         if not getenv("RHUISKIPSETUP"):
