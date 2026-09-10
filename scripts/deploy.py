@@ -123,6 +123,9 @@ PRS.add_argument("--boxed",
 PRS.add_argument("--local-content",
                  help="install RHUI without a remote share; content will be stored locally",
                  action="store_true")
+PRS.add_argument("--expected-rhui-version",
+                 help="check if the RHUA image is tagged with an expected RHUI version",
+                 metavar="version")
 PRS.add_argument("--dry-run",
                  help="only construct and print the ansible-playbook command, do not run it",
                  action="store_true")
@@ -301,6 +304,9 @@ if ARGS.mig:
 
 if ARGS.toanotherrhua:
     EVARS += " toanotherrhua=True"
+
+if ARGS.expected_rhui_version:
+    EVARS += " expected_rhui_version=" + ARGS.expected_rhui_version
 
 if ARGS.extra_vars:
     EVARS += " " + ARGS.extra_vars
