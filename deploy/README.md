@@ -1,6 +1,9 @@
 Requirements
 ---------------
 * Ansible
+* Additional Ansible collections:
+  * `ansible-galaxy collection install containers.podman`
+  * `ansible-galaxy collection install community.docker`
 * Have enough machines ready - check the rest of Read Me for details on various RHUI setups.
 * Red Hat credentials and also credentials for the registry hosting RHUI contaner images.
 
