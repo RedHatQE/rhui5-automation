@@ -88,7 +88,7 @@
     mount:
       path: /mnt
       state: unmounted
-  when: saveandrestore | default(False)
+  when: saveandrestore | default(False) | bool
   tags: launchpad
 
 - name: install a container management tool
@@ -153,7 +153,7 @@
     creates: /root/test_files
     removes: /var/lib/rhui/root/test_files
   delegate_to: "{{ groups['RHUA'][0] }}"
-  when: clone | default(False)
+  when: clone | default(False) | bool
   tags: launchpad
 
 - name: log in to the registry using podman
@@ -220,7 +220,7 @@
     creates: /var/lib/rhui/root/test_files
     removes: /root/test_files
   delegate_to: "{{ groups['RHUA'][0] }}"
-  when: clone | default(False)
+  when: clone | default(False) | bool
   tags: launchpad
 
 - name: check if rhui-manager can run

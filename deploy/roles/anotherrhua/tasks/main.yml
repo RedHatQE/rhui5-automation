@@ -28,7 +28,7 @@
       name: nfs-server
       state: started
       enabled: True
-  when: clone | default(False) or saveandrestore | default(False)
+  when: clone | default(False) | bool or saveandrestore | default(False) | bool
   tags: anotherrhua
 
 - name: block for cloning only
@@ -55,5 +55,5 @@
     mount:
       path: /mnt/old_remote_share
       state: unmounted
-  when: clone | default(False)
+  when: clone | default(False) | bool
   tags: anotherrhua

@@ -10,16 +10,16 @@
     - common
 
 - import_playbook: filesystem.yml
-  when: not local_content | default(False)
+  when: not (local_content | default(False) | bool)
 - import_playbook: rhua.yml
 - import_playbook: anotherrhua.yml
-  when: mig | default(False) and toanotherrhua | default(False) or clone | default(False) or saveandrestore | default(False)
+  when: mig | default(False) | bool and toanotherrhua | default(False) | bool or clone | default(False) | bool or saveandrestore | default(False) | bool
 - import_playbook: haproxy.yml
 - import_playbook: cds.yml
 - import_playbook: cli.yml
 - import_playbook: launchpad.yml
 - import_playbook: tests.yml
 - import_playbook: postmig.yml
-  when: mig | default(False) and not toanotherrhua | default(False)
+  when: mig | default(False) | bool and not (toanotherrhua | default(False) | bool)
 - import_playbook: k8s_yaml.yml
-  when: kube | default(False)
+  when: kube | default(False) | bool

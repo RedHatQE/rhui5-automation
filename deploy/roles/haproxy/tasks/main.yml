@@ -10,9 +10,9 @@
   tags: haproxy
 
 - import_tasks: proxy.yml
-  when: proxy | default(False)
+  when: proxy | default(False) | bool
   tags: proxy
 
 - import_tasks: kube.yml
-  when: kube | default(False)
+  when: kube | default(False) | bool
   tags: kube

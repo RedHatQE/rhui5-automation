@@ -6,5 +6,5 @@
   tags: rhua
 
 - import_tasks: save.yml
-  when: saveandrestore | default(False)
+  when: saveandrestore | default(False) | bool
   tags: rhua,save
