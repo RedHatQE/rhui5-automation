@@ -4,14 +4,14 @@
   block:
   - name: create the bin directory for the unprivileged user
     file:
-      path: /home/{{ ansible_env.SUDO_USER }}/bin
+      path: /home/{{ ansible_facts['env']['SUDO_USER'] }}/bin
       state: directory
     become: False
 
   - name: download minikube
     get_url:
       url: https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-      dest: /home/{{ ansible_env.SUDO_USER }}/bin/minikube
+      dest: /home/{{ ansible_facts['env']['SUDO_USER'] }}/bin/minikube
       mode: "755"
     become: False
 
@@ -24,13 +24,13 @@
     block:
     - name: create the directory for container certs for minikube
       file:
-        name: "/home/{{ ansible_env.SUDO_USER }}/.minikube/certs"
+        name: "/home/{{ ansible_facts['env']['SUDO_USER'] }}/.minikube/certs"
         state: directory
 
     - name: copy the RH CA cert to this directory
       copy:
         src: /etc/rhsm/ca/redhat-uep.pem
-        dest: "/home/{{ ansible_env.SUDO_USER }}/.minikube/certs"
+        dest: "/home/{{ ansible_facts['env']['SUDO_USER'] }}/.minikube/certs"
         remote_src: True
     when: registry['insecure'] | default(False) | bool
     become: False
@@ -38,6 +38,6 @@
   - name: start minikube
     command:
       cmd: minikube start --driver=podman
-      creates: /home/{{ ansible_env.SUDO_USER }}/.kube/config
+      creates: /home/{{ ansible_facts['env']['SUDO_USER'] }}/.kube/config
     become: False
   tags: kube

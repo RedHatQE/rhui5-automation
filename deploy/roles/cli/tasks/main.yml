@@ -19,7 +19,7 @@
   with_indexed_items: "{{ groups['CLI'] }}"
   when: >
     "'CLI' in groups" and
-    ansible_os_family == "RedHat" and
-    ansible_distribution_major_version|int == 8 and
-    ansible_architecture == "aarch64"
+    ansible_facts['os_family'] == "RedHat" and
+    ansible_facts['distribution_major_version']|int == 8 and
+    ansible_facts['architecture'] == "aarch64"
   tags: cli

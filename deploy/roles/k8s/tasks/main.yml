@@ -62,7 +62,7 @@
 - name: upload the list of additional manual commands
   template:
     src: k8s_commands.j2
-    dest: /home/{{ ansible_env.SUDO_USER }}/bin/k8s_commands.sh
+    dest: /home/{{ ansible_facts['env']['SUDO_USER'] }}/bin/k8s_commands.sh
     mode: "755"
   become: False
   when: inventory_hostname in groups['HAPROXY']
