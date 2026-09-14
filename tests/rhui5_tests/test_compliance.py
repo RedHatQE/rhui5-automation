@@ -40,9 +40,10 @@ def test_00_setup():
         RHUIManagerCLIInstance.add(RHUA, "haproxy", unsafe=True)
 
 def test_01_deprecation_warnings():
-    """check for deprecation warnings from the installer playbook"""
+    """check for deprecation warnings from the installer and instance management playbooks"""
     Expect.expect_retval(RHUA,
                          "grep -i 'DEPRECATION WARNING' "
+                         "/var/lib/rhui/log/rhua_ansible.log "
                          "/var/lib/rhui/log/rhui-installer_logger.log*",
                          1)
 
