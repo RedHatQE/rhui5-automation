@@ -104,7 +104,10 @@ class TestRhuiApi():
             repo_unused_dict = json.loads(api_response)
         except json.decoder.JSONDecodeError as err:
             raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
-        unused_products = repo_unused_dict["products"]
+        try:
+            unused_products = repo_unused_dict["products"]
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
         matched_products = [pr for pr in unused_products if pr["name"] == self.product_name]
         nose.tools.ok_(matched_products, msg=f"unused products: {unused_products}")
         nose.tools.eq_(matched_products[0]["name"], self.product_name)
@@ -140,7 +143,10 @@ class TestRhuiApi():
             raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
         # check the number of repos (two custom, one added by its ID and several by the product)
         nose.tools.eq_(len(repo_list_dict["repositories"]), 3 + len(self.product_ids))
-        actual_repos = [repo["id"] for repo in repo_list_dict["repositories"]]
+        try:
+            actual_repos = [repo["id"] for repo in repo_list_dict["repositories"]]
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
         expected_repos = [CUSTOM_REPO, CUSTOM_REPO_UN, self.rh_repo_id] + self.product_ids
         nose.tools.eq_(sorted(actual_repos), sorted(expected_repos))
 
@@ -154,7 +160,10 @@ class TestRhuiApi():
                 repo_info_dict = json.loads(api_response)
             except json.decoder.JSONDecodeError as err:
                 raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
-            nose.tools.eq_(repo_info_dict["id"], repo)
+            try:
+                nose.tools.eq_(repo_info_dict["id"], repo)
+            except KeyError as err:
+                raise RuntimeError(f"response: {api_response}") from err
             # targetted checks for the individual repos
             if repo == CUSTOM_REPO:
                 nose.tools.eq_(repo_info_dict["description"], CR_DISPLAY_NAME)
@@ -176,7 +185,10 @@ class TestRhuiApi():
             response_lines = [json.loads(line) for line in api_response.splitlines()]
         except json.decoder.JSONDecodeError as err:
             raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
-        sync_tasks = [line for line in response_lines if line["type"] == "scheduled"]
+        try:
+            sync_tasks = [line for line in response_lines if line["type"] == "scheduled"]
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
         # expect one such task for the repo to sync
         nose.tools.eq_(len(sync_tasks), 1)
         # and it should be the right repo
@@ -197,7 +209,10 @@ class TestRhuiApi():
             response_lines = [json.loads(line) for line in api_response.splitlines()]
         except json.decoder.JSONDecodeError as err:
             raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
-        sync_tasks = [line for line in response_lines if line["type"] == "scheduled"]
+        try:
+            sync_tasks = [line for line in response_lines if line["type"] == "scheduled"]
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
         # expect as many tasks as there are repos in the product plus the base RH repo
         nose.tools.eq_(len(sync_tasks), len(self.product_ids) + 1)
         time.sleep(5)
@@ -223,7 +238,10 @@ class TestRhuiApi():
             response_lines = [json.loads(line) for line in api_response.splitlines()]
         except json.decoder.JSONDecodeError as err:
             raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
-        delete_tasks = [line for line in response_lines if line["type"] == "repo"]
+        try:
+            delete_tasks = [line for line in response_lines if line["type"] == "repo"]
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
         # expect as many such tasks as there were repos to delete
         nose.tools.eq_(len(delete_tasks), len(self.product_ids))
         # wait until there are no running tasks
@@ -244,8 +262,11 @@ class TestRhuiApi():
             response_lines = [json.loads(line) for line in api_response.splitlines()]
         except json.decoder.JSONDecodeError as err:
             raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
-        package_dict = [line for line in response_lines if line["type"] == "package"]
-        package_list = [item["package"]["name"] for item in package_dict]
+        try:
+            package_dict = [line for line in response_lines if line["type"] == "package"]
+            package_list = [item["package"]["name"] for item in package_dict]
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
         nose.tools.ok_(self.test_package in package_list,
                        msg=f"packages: {package_list}")
 
@@ -256,8 +277,11 @@ class TestRhuiApi():
             upload_task_dict = json.loads(api_response)
         except json.decoder.JSONDecodeError as err:
             raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
-        nose.tools.eq_(upload_task_dict["repo_id"], CUSTOM_REPO)
-        nose.tools.eq_(upload_task_dict["packages"], [UPLOAD_RPM])
+        try:
+            nose.tools.eq_(upload_task_dict["repo_id"], CUSTOM_REPO)
+            nose.tools.eq_(upload_task_dict["packages"], [UPLOAD_RPM])
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
         time.sleep(5)
         # wait until there are no running tasks
         while json.loads(RHUIAPI.tasks_running())["tasks"]:
@@ -290,8 +314,11 @@ class TestRhuiApi():
             remove_task_dict = json.loads(api_response)
         except json.decoder.JSONDecodeError as err:
             raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
-        nose.tools.eq_(remove_task_dict["repo_id"], CUSTOM_REPO)
-        nose.tools.eq_(remove_task_dict["packages"], [UPLOAD_RPM])
+        try:
+            nose.tools.eq_(remove_task_dict["repo_id"], CUSTOM_REPO)
+            nose.tools.eq_(remove_task_dict["packages"], [UPLOAD_RPM])
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
         # remove the second package by its name and version-release
         (rpm_name, rpm_vr) = UPLOAD_RPM_2_NAME_VR
         try:
@@ -332,7 +359,10 @@ class TestRhuiApi():
             raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
         # check the JSON keys
         nose.tools.eq_(list(k8s_dict.keys()), ["ssl_cert_secret_name", "manifest"])
-        nose.tools.eq_(k8s_dict["ssl_cert_secret_name"], secret)
+        try:
+            nose.tools.eq_(k8s_dict["ssl_cert_secret_name"], secret)
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
         # check if the manifest exists, can be loaded as YAML, and contains the right stuff
         k8s_yaml = yaml.safe_load_all(k8s_dict["manifest"])
         data = list(k8s_yaml)
@@ -345,7 +375,10 @@ class TestRhuiApi():
             label_dict = json.loads(api_response)
         except json.decoder.JSONDecodeError as err:
             raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
-        label_list = label_dict["repo_labels"]
+        try:
+            label_list = label_dict["repo_labels"]
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
         # check if the test repo labels is present
         nose.tools.ok_(self.rh_repo_label in label_list,
                        msg=f"labels: {label_list}")
@@ -360,9 +393,12 @@ class TestRhuiApi():
             cert_dict = json.loads(api_response)
         except json.decoder.JSONDecodeError as err:
             raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
-        nose.tools.eq_(cert_dict["status"], "created")
-        nose.tools.eq_(cert_dict["cert_path"], f"{ENT_DIR}/{ENT}.crt")
-        nose.tools.eq_(cert_dict["key_path"], f"{ENT_DIR}/{ENT}.key")
+        try:
+            nose.tools.eq_(cert_dict["status"], "created")
+            nose.tools.eq_(cert_dict["cert_path"], f"{ENT_DIR}/{ENT}.crt")
+            nose.tools.eq_(cert_dict["key_path"], f"{ENT_DIR}/{ENT}.key")
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
         # also check the files
         Expect.expect_retval(RHUA, f"test -f {ENT_DIR_HOST}/{ENT}.crt")
         Expect.expect_retval(RHUA, f"test -f {ENT_DIR_HOST}/{ENT}.key")
@@ -382,8 +418,11 @@ class TestRhuiApi():
             rpm_dict = json.loads(api_response)
         except json.decoder.JSONDecodeError as err:
             raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
-        nose.tools.eq_(rpm_dict["status"], "created")
-        nose.tools.eq_(rpm_dict["rpm_path"], expected_path)
+        try:
+            nose.tools.eq_(rpm_dict["status"], "created")
+            nose.tools.eq_(rpm_dict["rpm_path"], expected_path)
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
         # check if the rpm was created
         Expect.expect_retval(RHUA, f"test -f /var/lib/rhui/{expected_path}")
         # also try creating an RPM using labels rather than a prepared cert and key,
