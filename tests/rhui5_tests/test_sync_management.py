@@ -6,7 +6,9 @@ import logging
 import nose
 import yaml
 
+from rhui5_tests_lib.cfg import Config
 from rhui5_tests_lib.conmgr import ConMgr
+from rhui5_tests_lib.pulp_api import PulpAPI
 from rhui5_tests_lib.rhuimanager import RHUIManager
 from rhui5_tests_lib.rhuimanager_repo import RHUIManagerRepo
 from rhui5_tests_lib.rhuimanager_sync import RHUIManagerSync
@@ -16,6 +18,10 @@ from rhui5_tests_lib.util import Util
 logging.basicConfig(level=logging.DEBUG)
 
 RHUA = ConMgr.connect()
+DEFAULT_SOCK_READ_TIMEOUT = 1800
+DEFAULT_TOTAL_TIMEOUT = 3600
+CUSTOM_SOCK_READ_TIMEOUT = 2000
+CUSTOM_TOTAL_TIMEOUT = 4000
 
 class TestSync():
     '''
@@ -32,6 +38,7 @@ class TestSync():
                 self.yum_repo_name = doc["yum_repos"][version][arch]["name"]
                 self.yum_repo_version = doc["yum_repos"][version][arch]["version"]
                 self.yum_repo_kind = doc["yum_repos"][version][arch]["kind"]
+                self.yum_repo_id = doc["yum_repos"][version][arch]["id"]
             except KeyError as version:
                 raise nose.SkipTest(f"No test repo defined for RHEL {version} on {arch}.")
 
@@ -73,8 +80,32 @@ class TestSync():
         RHUIManagerSync.export_repos(RHUA, [Util.format_repo(self.yum_repo_name,
                                                              self.yum_repo_version)])
 
+    def test_06_check_default_timeouts(self):
+        '''check the default timeout properties of the remote'''
+        remote_data = PulpAPI.get_remote(RHUA, self.yum_repo_id)
+        actual_sock_read_timeout = remote_data["sock_read_timeout"]
+        nose.tools.eq_(actual_sock_read_timeout, DEFAULT_SOCK_READ_TIMEOUT)
+        actual_total_timeout = remote_data["total_timeout"]
+        nose.tools.eq_(actual_total_timeout, DEFAULT_TOTAL_TIMEOUT)
+
+    def test_07_set_custom_timeouts(self):
+        '''set custom timeout properties and resync the repo'''
+        Config.set_rhui_tools_conf(RHUA, "rhui", "sock_read_timeout", str(CUSTOM_SOCK_READ_TIMEOUT))
+        Config.set_rhui_tools_conf(RHUA, "rhui", "total_timeout", str(CUSTOM_TOTAL_TIMEOUT), False)
+        RHUIManagerSync.sync_repo(RHUA, [Util.format_repo(self.yum_repo_name,
+                                                          self.yum_repo_version)])
+
+    def test_08_check_custom_timeouts(self):
+        '''check the custom timeout properties of the remote'''
+        remote_data = PulpAPI.get_remote(RHUA, self.yum_repo_id)
+        actual_sock_read_timeout = remote_data["sock_read_timeout"]
+        nose.tools.eq_(actual_sock_read_timeout, CUSTOM_SOCK_READ_TIMEOUT)
+        actual_total_timeout = remote_data["total_timeout"]
+        nose.tools.eq_(actual_total_timeout, CUSTOM_TOTAL_TIMEOUT)
+
     def test_99_cleanup(self):
-        '''remove the RH repo and cert'''
+        '''clean up'''
+        Config.restore_rhui_tools_conf(RHUA)
         RHUIManagerRepo.delete_repo(RHUA,
                                     [Util.format_repo(self.yum_repo_name, self.yum_repo_version)])
         RHUIManager.remove_rh_certs(RHUA)
