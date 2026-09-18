@@ -249,6 +249,15 @@
   when: expected_rhui_version is defined
   tags: launchpad,reinstall,version_check
 
+- name: check the db-version file
+  command: cat /var/lib/rhui/config/rhua/db-version
+  delegate_to: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'][0] }}"
+  register: cat_db_version
+  failed_when: cat_db_version.stdout|int != expected_rhui_version.split(".")[0]|int * 100 + expected_rhui_version.split(".")[1]|int
+  changed_when: false
+  when: expected_rhui_version is defined
+  tags: launchpad,reinstall,version_check
+
 - name: check the Pulp web server certificate expiration
   command: "openssl x509 -noout -in /var/lib/rhui/config/pulp/certs/pulp_webserver.crt -checkend 31536000"
   delegate_to: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'][0] }}"
