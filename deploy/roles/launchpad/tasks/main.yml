@@ -249,5 +249,13 @@
   when: expected_rhui_version is defined
   tags: launchpad,reinstall,version_check
 
+- name: check the Pulp web server certificate expiration
+  command: "openssl x509 -noout -in /var/lib/rhui/config/pulp/certs/pulp_webserver.crt -checkend 31536000"
+  delegate_to: "{{ groups['ANOTHERRHUA' if toanotherrhua | default(False) else 'RHUA'][0] }}"
+  register: will_expire
+  failed_when: will_expire.rc == 0
+  when: pulp_cert_shortlived | default(False) | bool
+  tags: check_pulp_cert_expiration
+
 - import_tasks: ssh_post.yml
   tags: launchpad

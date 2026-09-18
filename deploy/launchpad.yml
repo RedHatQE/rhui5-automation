@@ -42,6 +42,9 @@
       --podman-username {{ registry['username'] }}
       --podman-password {{ registry['password'] }}
       {% endif %}
+      {% if pulp_cert_shortlived | default(False) %}
+      --rhua-pulp-certs-expiration 365
+      {% endif %}
     families_that_need_root_for_containers:
       - Suse
     distros_that_need_docker:

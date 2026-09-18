@@ -126,6 +126,9 @@ PRS.add_argument("--local-content",
 PRS.add_argument("--expected-rhui-version",
                  help="check if the RHUA image is tagged with an expected RHUI version",
                  metavar="version")
+PRS.add_argument("--pulp-cert-shortlived",
+                 help="create the Pulp web server certificate with a short expiration period",
+                 action="store_true")
 PRS.add_argument("--dry-run",
                  help="only construct and print the ansible-playbook command, do not run it",
                  action="store_true")
@@ -307,6 +310,9 @@ if ARGS.toanotherrhua:
 
 if ARGS.expected_rhui_version:
     EVARS += " expected_rhui_version=" + ARGS.expected_rhui_version
+
+if ARGS.pulp_cert_shortlived:
+    EVARS += " pulp_cert_shortlived=True"
 
 if ARGS.extra_vars:
     EVARS += " " + ARGS.extra_vars
