@@ -208,6 +208,13 @@ To simplify the deployment of minikube, run the deployment script with the `--ku
 script will print test instructions in the end. Note that test options are very limited in this
 case, and several manual steps are necessary, as described in the instructions.
 
+Custom validity of the Pulp web server certificate
+--------------------------------------------------
+RHUI can be deployed in a way that creates a self-signed certificate for the Pulp web server. In
+this scenario, the number of days this certificate will be valid for should be possible to be
+specified. To test if such a custom value can actually be specified, and to test the expiration
+date, run the deployment script with `--pulp-cert-shortlived`.
+
 Managed roles
 -------------
 - RHUA
