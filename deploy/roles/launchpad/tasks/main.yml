@@ -122,7 +122,7 @@
     tags: launchpad
     register: copyrhcacert
     ignore_errors: True
-  when: ansible_facts['distribution'] not in distros_that_need_docker and registry['insecure'] | default(False) | bool
+  when: ansible_facts['distribution'] not in distros_that_need_docker and registry['insecure'] is truthy
   tags: launchpad
 
 - name: docker block for insecure registries
@@ -139,7 +139,7 @@
       name: docker
       state: "{{ 'restarted' if dockerconfig is changed else 'started' }}"
     tags: launchpad
-  when: ansible_facts['distribution'] in distros_that_need_docker and registry['insecure'] | default(False) | bool
+  when: ansible_facts['distribution'] in distros_that_need_docker and registry['insecure'] is truthy
   tags: launchpad
 
 - name: enable lingering
@@ -161,7 +161,7 @@
     registry: "{{ registry['hostname'] }}"
     username: "{{ registry['username'] }}"
     password: "{{ registry['password'] }}"
-    tlsverify: "{{ not registry['insecure'] | default(False) | bool or copyrhcacert is defined and copyrhcacert is success }}"
+    tlsverify: "{{ registry['insecure'] is falsy or copyrhcacert is defined and copyrhcacert is success }}"
   become: "{{ ansible_facts['os_family'] in families_that_need_root_for_containers }}"
   when: ansible_facts['distribution'] not in distros_that_need_docker and registry['username'] | default('') | length > 0
   tags: launchpad,reinstall
@@ -179,7 +179,7 @@
     name: rhui_installer_task
     image: "{{ registry['hostname'] }}/{{ installer_image }}"
     pull: always
-    tls_verify: "{{ not registry['insecure'] | default(False) | bool or copyrhcacert is defined and copyrhcacert is success }}"
+    tls_verify: "{{ registry['insecure'] is falsy or copyrhcacert is defined and copyrhcacert is success }}"
     rm: True
     interactive: True
     tty: True
