@@ -6,7 +6,7 @@ import time
 import logging
 import nose
 
-from rhui5_tests_lib.cfg import RHUI_ROOT
+from rhui5_tests_lib.cfg import Config, RHUI_ROOT
 from rhui5_tests_lib.conmgr import ConMgr
 from rhui5_tests_lib.installer import RHUIInstaller
 from rhui5_tests_lib.rhuimanager import RHUIManager
@@ -21,18 +21,17 @@ CDS = ConMgr.connect(CDS_HOSTNAME)
 
 OLD_FS_SERVER = f"{ConMgr.get_nfs_hostname()}:/export"
 NEW_FS_SERVER = f"{ConMgr.get_rhua_hostname()}:/export"
+OLD_FS_OPTIONS = "rw"
+NEW_FS_OPTIONS = "timeo=100"
 
-def _check_rhui_mountpoint(connection, fs_server):
+def _check_rhui_mountpoint(connection, fs_server, options=""):
     """check the RHUI mountpoint"""
-    mount_info_files = ["/proc/mounts"]
+    mount_info_files = ["/proc/mounts", "/etc/fstab"]
     _, stdout, _ = connection.exec_command("ls /usr/lib/systemd/system/rhui_*.service")
     output = stdout.read().decode().strip()
-    if output:
-        fun = basename(output).replace("rhui_", "").replace(".service", "")
-        cat = f"{fun} cat"
-    else:
-        cat = "cat"
+    fun = basename(output).replace("rhui_", "").replace(".service", "")
     for mount_info_file in mount_info_files:
+        cat = "cat" if mount_info_file == "/etc/fstab" else f"{fun} cat"
         _, stdout, _ = connection.exec_command(f"{cat} {mount_info_file}")
         mounts = stdout.read().decode().splitlines()
         matches = [line for line in mounts if RHUI_ROOT in line]
@@ -45,6 +44,12 @@ def _check_rhui_mountpoint(connection, fs_server):
         test = actual_share.startswith(fs_server)
         nose.tools.ok_(test,
                        msg=f"{fs_server} not found in {mount_info_file}, found: {actual_share}")
+        # if also checking options, find and compare them; options are in the fourth column
+        if options:
+            actual_options = properties[3]
+            test = options in actual_options
+            nose.tools.ok_(test,
+                           msg=f"{options} not found in {mount_info_file}, found: {actual_options}")
 
 def setup():
     """announce the beginning of the test run"""
@@ -59,26 +64,31 @@ def test_01_add_cds():
     nose.tools.ok_(cds_list)
 
 def test_02_rerun_installer():
-    """rerun the installer with a different remote FS server"""
-    RHUIInstaller.rerun(other_args=f"--remote-fs-server {NEW_FS_SERVER}")
+    """rerun the installer with a different remote FS server and custom mount options"""
+    RHUIInstaller.rerun(other_args=f"--remote-fs-server {NEW_FS_SERVER} "
+                                   f"--rhua-mount-options {NEW_FS_OPTIONS}")
+    time.sleep(30)
 
 def test_03_check_rhua_mountpoint():
     """check if the new remote share has replaced the old one on the RHUA"""
-    _check_rhui_mountpoint(RHUA, NEW_FS_SERVER)
+    _check_rhui_mountpoint(RHUA, NEW_FS_SERVER, NEW_FS_OPTIONS)
+    # also check the configuration file
+    saved_mount_options = Config.get_from_rhui_tools_conf(RHUA, "rhui", "rhua_mount_options")
+    nose.tools.eq_(saved_mount_options, NEW_FS_OPTIONS)
 
 def test_04_reinstall_cds():
     """reinstall the CDS"""
-    time.sleep(60)
     RHUIManagerCLIInstance.reinstall(RHUA, "cds", CDS_HOSTNAME)
 
 def test_05_check_cds_mountpoint():
     """check if the new remote share is now used on the CDS"""
-    _check_rhui_mountpoint(CDS, NEW_FS_SERVER)
+    _check_rhui_mountpoint(CDS, NEW_FS_SERVER, NEW_FS_OPTIONS)
 
 def test_99_cleanup():
     """clean up: delete the CDS and rerun the installer with the original remote FS"""
     RHUIManagerCLIInstance.delete(RHUA, "cds", [CDS_HOSTNAME], force=True)
-    RHUIInstaller.rerun(other_args=f"--remote-fs-server {OLD_FS_SERVER}")
+    RHUIInstaller.rerun(other_args=f"--remote-fs-server {OLD_FS_SERVER} "
+                                   f"--rhua-mount-options {OLD_FS_OPTIONS}")
     # did it work?
     _check_rhui_mountpoint(RHUA, OLD_FS_SERVER)
     # finish the cleanup
