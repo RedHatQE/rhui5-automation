@@ -69,6 +69,37 @@ class RHUIManagerSync():
             nose.tools.assert_equal(status, "Success")
 
     @staticmethod
+    def view_last_sync_details(connection, index=1, not_yet_synced=False):
+        """view the details of the last repository sync"""
+        # Specify the repo by its index (1+), not its name (for technical reasons).
+        # Basically expect success or "not yet synced", fail otherwise.
+        RHUIManager.screen(connection, "sync")
+        Expect.enter(connection, "vr")
+        Expect.expect(connection, "Select a repository.*abort:", 60)
+        Expect.enter(connection, str(index))
+        state = Expect.expect_list(connection,
+                                   [(re.compile(".*Success.*",
+                                                re.DOTALL),
+                                     1),
+                                    (re.compile(".*No syncs have been completed for this repo.*",
+                                                re.DOTALL),
+                                     2),
+                                    (re.compile(".*unexpected error.*",
+                                                re.DOTALL),
+                                     3)])
+        Expect.enter(connection, "q")
+        time.sleep(5)
+        if state == 1:
+            return
+        if state == 2:
+            if not_yet_synced:
+                return
+            raise RuntimeError("This repo hasn't been synced yet but you said it should be.")
+        if state == 3:
+            raise RuntimeError("Unexpected error, check logs!")
+        raise RuntimeError("Another error, check logs!")
+
+    @staticmethod
     def export_repos(connection, repolist):
         """export repos to the file system"""
         RHUIManager.screen(connection, "sync")

@@ -59,6 +59,8 @@ class TestSync():
         RHUIManagerRepo.add_rh_repo_by_repo(RHUA, [Util.format_repo(self.yum_repo_name,
                                                                     self.yum_repo_version,
                                                                     self.yum_repo_kind)])
+        # also check the sync status on the vr screen with this unsynced repo
+        RHUIManagerSync.view_last_sync_details(RHUA, not_yet_synced=True)
 
     def test_02_sync_repo(self):
         '''sync a RH repo '''
@@ -102,6 +104,11 @@ class TestSync():
         nose.tools.eq_(actual_sock_read_timeout, CUSTOM_SOCK_READ_TIMEOUT)
         actual_total_timeout = remote_data["total_timeout"]
         nose.tools.eq_(actual_total_timeout, CUSTOM_TOTAL_TIMEOUT)
+
+    @staticmethod
+    def test_09_vr_screen():
+        """check the sync status on the vr screen"""
+        RHUIManagerSync.view_last_sync_details(RHUA)
 
     def test_99_cleanup(self):
         '''clean up'''
