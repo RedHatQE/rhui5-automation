@@ -183,6 +183,13 @@ def test_13_check_nodes():
                    RHUIManagerCLIInstance.list(RHUA, "haproxy")
     nose.tools.eq_(expected_nodes, actual_nodes)
 
+def test_14_fetcher_plugin_ca_cert():
+    """check if the fetcher plugin uses the right CA cert"""
+    cmd = "grep ^ssl_ca_file /usr/lib/python3.12/site-packages/rhui_cds_plugin/content_manager.py"
+    _, stdout, _ = CDS.exec_command(f"cds {cmd}")
+    output = stdout.read().decode()
+    nose.tools.ok_("rhui_ca_crt" in output, msg=f"unexpected definition of 'ssl_ca_file': {output}")
+
 def test_99_cleanup():
     """clean up: rerun the installer with the original certificates and keys, remove the nodes"""
     if getenv("RHUIKEEPCUSTOMCERTS"):
