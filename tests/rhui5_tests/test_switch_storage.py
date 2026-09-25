@@ -84,6 +84,20 @@ def test_05_check_cds_mountpoint():
     """check if the new remote share is now used on the CDS"""
     _check_rhui_mountpoint(CDS, NEW_FS_SERVER, NEW_FS_OPTIONS)
 
+def test_06_rerun_installer():
+    """rerun the installer with no mount point options and expect no changes"""
+    RHUIInstaller.rerun()
+    time.sleep(30)
+    # check the mount point
+    _check_rhui_mountpoint(RHUA, NEW_FS_SERVER, NEW_FS_OPTIONS)
+    # check the configuration file
+    saved_mount_options = Config.get_from_rhui_tools_conf(RHUA, "rhui", "rhua_mount_options")
+    nose.tools.eq_(saved_mount_options, NEW_FS_OPTIONS)
+
+def test_07_wrong_mount_options():
+    """try running the installer with disallowed/conflicting mount options and expect it to fail"""
+    RHUIInstaller.rerun(other_args="--rhua-mount-options rw,fail", expect_trouble=True)
+
 def test_99_cleanup():
     """clean up: delete the CDS and rerun the installer with the original remote FS"""
     RHUIManagerCLIInstance.delete(RHUA, "cds", [CDS_HOSTNAME], force=True)
