@@ -602,6 +602,16 @@ class RHUIManagerCLI():
         raise RuntimeError("Execution failed" + response)
 
     @staticmethod
+    def proxy_update(connection, force=False):
+        '''
+        propagate proxy settings from rhui-tools.conf to all repository remotes
+        '''
+        cmd = "rhua rhui-manager proxy update"
+        if force:
+            cmd += " --force"
+        Expect.expect_retval(connection, cmd)
+
+    @staticmethod
     def logout(connection):
         '''
         log out from rhui-manager

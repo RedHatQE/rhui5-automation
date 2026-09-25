@@ -26,6 +26,7 @@ Welcome to the RHUI 5 Test Plan!
    image_cleanup
    k8s_configuration
    omit_cacert
+   proxy_updates
    pulp_workers
    repo_management
    repo_prefix
