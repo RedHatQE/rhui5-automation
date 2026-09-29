@@ -49,7 +49,7 @@ def _check_rhui_mountpoint(connection, fs_server, options=""):
         if options:
             actual_options = properties[3].split(",")
             options_to_check = [options]
-            # the mandatory options only exists in the fstab on the host
+            # the mandatory options only exist in the fstab on the host
             if mount_info_file == "/etc/fstab":
                 options_to_check.extend(MANDATORY_FS_OPTIONS)
             for option in options_to_check:
