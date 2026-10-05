@@ -5,7 +5,7 @@ import time
 
 import nose
 
-from stitches.expect import Expect, CTRL_C
+from stitches.expect import Expect, ExpectFailed, CTRL_C
 
 from rhui5_tests_lib.cfg import RHUI_ROOT
 from rhui5_tests_lib.rhuimanager import RHUIManager
@@ -69,35 +69,28 @@ class RHUIManagerSync():
             nose.tools.assert_equal(status, "Success")
 
     @staticmethod
-    def view_last_sync_details(connection, index=1, not_yet_synced=False):
+    def view_last_sync_details(connection, index=1):
         """view the details of the last repository sync"""
         # Specify the repo by its index (1+), not its name (for technical reasons).
-        # Basically expect success or "not yet synced", fail otherwise.
+        # Return an info dict, unless an error occurs. Or None if the repo hasn't been synced yet.
         RHUIManager.screen(connection, "sync")
         Expect.enter(connection, "vr")
         Expect.expect(connection, "Select a repository.*abort:", 60)
         Expect.enter(connection, str(index))
-        state = Expect.expect_list(connection,
-                                   [(re.compile(".*Success.*",
-                                                re.DOTALL),
-                                     1),
-                                    (re.compile(".*No syncs have been completed for this repo.*",
-                                                re.DOTALL),
-                                     2),
-                                    (re.compile(".*unexpected error.*",
-                                                re.DOTALL),
-                                     3)])
-        Expect.enter(connection, "q")
-        time.sleep(5)
-        if state == 1:
-            return
-        if state == 2:
-            if not_yet_synced:
-                return
-            raise RuntimeError("This repo hasn't been synced yet but you said it should be.")
-        if state == 3:
+        pattern = re.compile(r".*(Repo:.*)\r\n\r\n-+\r\nrhui\s* \(sync\)\s* =>", re.DOTALL)
+        error = False
+        try:
+            all_lines = Expect.match(connection, pattern)[0].splitlines()
+        except ExpectFailed:
+            error = True
+        finally:
+            Expect.enter(connection, "q")
+            time.sleep(5)
+        if error:
             raise RuntimeError("Unexpected error, check logs!")
-        raise RuntimeError("Another error, check logs!")
+        if all_lines[1] == "No syncs have been completed for this repository.":
+            return None
+        return Util.lines_to_dict(all_lines)
 
     @staticmethod
     def export_repos(connection, repolist):

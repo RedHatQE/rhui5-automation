@@ -60,7 +60,8 @@ class TestSync():
                                                                     self.yum_repo_version,
                                                                     self.yum_repo_kind)])
         # also check the sync status on the vr screen with this unsynced repo
-        RHUIManagerSync.view_last_sync_details(RHUA, not_yet_synced=True)
+        last_sync_details = RHUIManagerSync.view_last_sync_details(RHUA)
+        nose.tools.eq_(last_sync_details, None)
 
     def test_02_sync_repo(self):
         '''sync a RH repo '''
@@ -108,7 +109,8 @@ class TestSync():
     @staticmethod
     def test_09_vr_screen():
         """check the sync status on the vr screen"""
-        RHUIManagerSync.view_last_sync_details(RHUA)
+        last_sync_details = RHUIManagerSync.view_last_sync_details(RHUA)
+        nose.tools.eq_(Util.uncolorify(last_sync_details["result"]), "Success")
 
     def test_99_cleanup(self):
         '''clean up'''
