@@ -231,3 +231,8 @@ class RHUIAPI():
             data["omit_repo_sslcacert"] = True
         cmd = f"{BASE_COMMAND} -d '{json.dumps(data)}' {BASE_URL}client/rpm"
         return subprocess.getoutput(cmd)
+
+    @staticmethod
+    def status_repos():
+        """list repositories with details and sync statuses"""
+        return subprocess.getoutput(f"{BASE}status/repos")

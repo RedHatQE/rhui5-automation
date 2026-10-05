@@ -65,9 +65,13 @@ class TestRhuiApi():
         with open("/etc/rhui5_tests/tested_repos.yaml", encoding="utf-8") as configfile:
             doc = yaml.safe_load(configfile)
             try:
-                self.rh_repo_id = doc["yum_repos"][self.version][arch]["id"]
-                self.rh_repo_label = doc["yum_repos"][self.version][arch]["label"]
-                self.rh_repo_path = doc["yum_repos"][self.version][arch]["path"]
+                self.rh_repo = {
+                                "id": doc["yum_repos"][self.version][arch]["id"],
+                                "name": doc["yum_repos"][self.version][arch]["name"],
+                                "version": doc["yum_repos"][self.version][arch]["version"],
+                                "label": doc["yum_repos"][self.version][arch]["label"],
+                                "path": doc["yum_repos"][self.version][arch]["path"]
+                               }
                 self.test_package = doc["yum_repos"][self.version][arch]["test_package"]
                 self.product_name = doc["product"]["name"]
                 self.product_ids = doc["product"]["ids"]
@@ -123,7 +127,7 @@ class TestRhuiApi():
         RHUIAPI.repo_create_custom(CUSTOM_REPO_UN,
                                    gpg_public_keys=[f"{CUSTOM_RPMS_DIR}/{KEY_FILENAME}"])
         # a Red Hat repo by its ID, sync it at the same time
-        RHUIAPI.repo_add([self.rh_repo_id], sync_now=True)
+        RHUIAPI.repo_add([self.rh_repo["id"]], sync_now=True)
         # Red Hat repos by their product name
         RHUIAPI.repo_add(product_names=[self.product_name])
         # check the packages in the first product repo -
@@ -147,15 +151,15 @@ class TestRhuiApi():
             actual_repos = [repo["id"] for repo in repo_list_dict["repositories"]]
         except KeyError as err:
             raise RuntimeError(f"response: {api_response}") from err
-        expected_repos = [CUSTOM_REPO, CUSTOM_REPO_UN, self.rh_repo_id] + self.product_ids
+        expected_repos = [CUSTOM_REPO, CUSTOM_REPO_UN, self.rh_repo["id"]] + self.product_ids
         nose.tools.eq_(sorted(actual_repos), sorted(expected_repos))
 
     def test_04_repo_info(self):
         """get repository details and check them"""
         # check the two custom repos and the main RH repo, one by one
-        for repo in CUSTOM_REPO, CUSTOM_REPO_UN, self.rh_repo_id:
+        for repo in CUSTOM_REPO, CUSTOM_REPO_UN, self.rh_repo["id"]:
             # also get sync info in the case of the RH repo
-            api_response = RHUIAPI.repo_info(repo, repo == self.rh_repo_id)
+            api_response = RHUIAPI.repo_info(repo, repo == self.rh_repo["id"])
             try:
                 repo_info_dict = json.loads(api_response)
             except json.decoder.JSONDecodeError as err:
@@ -173,7 +177,7 @@ class TestRhuiApi():
                 nose.tools.ok_(repo_info_dict["gpg_key"],
                                msg="No GPG key is configured for the repo.")
             else:
-                nose.tools.eq_(repo_info_dict["pulp_labels"]["base_path"], self.rh_repo_path)
+                nose.tools.eq_(repo_info_dict["pulp_labels"]["base_path"], self.rh_repo["path"])
                 nose.tools.ok_("last_sync_date" in repo_info_dict,
                                msg=f"repo info: {repo_info_dict}")
 
@@ -257,7 +261,7 @@ class TestRhuiApi():
 
     def test_08_list_packages(self):
         """list packages in the Red Hat repo and check for a test package"""
-        api_response = RHUIAPI.packages_list(self.rh_repo_id)
+        api_response = RHUIAPI.packages_list(self.rh_repo["id"])
         try:
             response_lines = [json.loads(line) for line in api_response.splitlines()]
         except json.decoder.JSONDecodeError as err:
@@ -380,12 +384,12 @@ class TestRhuiApi():
         except KeyError as err:
             raise RuntimeError(f"response: {api_response}") from err
         # check if the test repo labels is present
-        nose.tools.ok_(self.rh_repo_label in label_list,
+        nose.tools.ok_(self.rh_repo["label"] in label_list,
                        msg=f"labels: {label_list}")
 
     def test_13_generate_ent_cert(self):
         """generate an entitlement certificate"""
-        api_response = RHUIAPI.client_cert([CUSTOM_REPO, self.rh_repo_label],
+        api_response = RHUIAPI.client_cert([CUSTOM_REPO, self.rh_repo["label"]],
                                            ENT,
                                            35*365,
                                            ENT_DIR)
@@ -430,7 +434,7 @@ class TestRhuiApi():
         proxy = "_none_"
         api_response = RHUIAPI.client_rpm(ENT_DIR,
                                           RPM,
-                                          [self.rh_repo_label],
+                                          [self.rh_repo["label"]],
                                           [CUSTOM_REPO_UN],
                                           "",
                                           "",
@@ -450,7 +454,7 @@ class TestRhuiApi():
         _, stdout, _ = RHUA.exec_command(f"cat {repo_file}")
         yum_cfg = ConfigParser()
         yum_cfg.read_file(stdout)
-        rh_section = f"rhui-{self.rh_repo_label}"
+        rh_section = f"rhui-{self.rh_repo['label']}"
         unprot_section = f"rhui-custom-{CUSTOM_REPO_UN}"
         nose.tools.ok_(rh_section in yum_cfg.sections(), msg=f"sections: {yum_cfg.sections()}")
         nose.tools.ok_(unprot_section in yum_cfg.sections(), msg=f"sections: {yum_cfg.sections()}")
@@ -472,12 +476,82 @@ class TestRhuiApi():
 
     def test_16_inst_rpm_custom_repo(self):
         """check if RPMs can be fetched from the custom and the Red Hat repos"""
+        # first of all, make sure the repos are exported - for this test and also for the next one
+        for repo in [self.rh_repo["id"], CUSTOM_REPO, CUSTOM_REPO_UN]:
+            RHUIManagerCLI.repo_export(RHUA, repo)
+            time.sleep(2)
         Yummy.install(CLI, [UPLOAD_RPM_3], False)
         Yummy.download(CLI, [self.test_package], DOWNDIR)
 
+    def test_17_repo_status(self):
+        """check repo status"""
+        api_response = RHUIAPI.status_repos()
+        try:
+            status_dict = json.loads(api_response)
+        except json.decoder.JSONDecodeError as err:
+            raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
+        try:
+            status_list = status_dict["repos"]
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
+        # check if the test repos are present in the status report
+
+        # custom protected repo
+        matched_cus_prot_repo_status = [st for st in status_list if st["id"] == CUSTOM_REPO]
+        # expect one match
+        nose.tools.eq_(len(matched_cus_prot_repo_status), 1)
+        # check the data
+        repo_status = matched_cus_prot_repo_status[0]
+        nose.tools.eq_(repo_status["name"], CUSTOM_REPO)
+        nose.tools.eq_(repo_status["base_path"], f"protected/{CUSTOM_REPO}")
+        nose.tools.eq_(repo_status["description"], CR_DISPLAY_NAME)
+        nose.tools.eq_(repo_status["group"], "custom")
+        nose.tools.eq_(repo_status["repo_type"], "rpm")
+        nose.tools.ok_(repo_status["repo_available"])
+        nose.tools.ok_(repo_status["repo_published"])
+        nose.tools.ok_(repo_status["metadata_available"])
+
+        # custom unprotected repo
+        matched_cus_unprot_repo_status = [st for st in status_list if st["id"] == CUSTOM_REPO_UN]
+        # expect one match
+        nose.tools.eq_(len(matched_cus_unprot_repo_status), 1)
+        # check the data
+        repo_status = matched_cus_unprot_repo_status[0]
+        nose.tools.eq_(repo_status["name"], CUSTOM_REPO_UN)
+        nose.tools.eq_(repo_status["base_path"], f"unprotected/{CUSTOM_REPO_UN}")
+        nose.tools.eq_(repo_status["description"], CUSTOM_REPO_UN)
+        nose.tools.eq_(repo_status["group"], "custom")
+        nose.tools.eq_(repo_status["repo_type"], "rpm")
+        nose.tools.ok_(repo_status["repo_available"])
+        nose.tools.ok_(repo_status["repo_published"])
+        nose.tools.ok_(repo_status["metadata_available"])
+
+        # RH repo
+        matched_rh_repo_status = [st for st in status_list if st["id"] == self.rh_repo["id"]]
+        # expect one match
+        nose.tools.eq_(len(matched_rh_repo_status), 1)
+        # check the data
+        repo_status = matched_rh_repo_status[0]
+        nose.tools.eq_(repo_status["name"], self.rh_repo["id"])
+        nose.tools.eq_(repo_status["description"],
+                       Util.format_repo(self.rh_repo["name"], self.rh_repo["version"]))
+        nose.tools.eq_(repo_status["base_path"], self.rh_repo["path"])
+        nose.tools.eq_(repo_status["group"], "redhat")
+        nose.tools.eq_(repo_status["repo_type"], "rpm")
+        nose.tools.ok_(repo_status["repo_available"])
+        nose.tools.ok_(repo_status["repo_published"])
+        nose.tools.ok_(repo_status["metadata_available"])
+        nose.tools.eq_(repo_status["last_sync_result"], "completed")
+        nose.tools.eq_(repo_status["last_sync_exception"], None)
+        nose.tools.eq_(repo_status["last_sync_traceback"], None)
+        nose.tools.ok_(repo_status["last_sync_start"])
+        nose.tools.ok_(repo_status["last_sync_end"])
+        nose.tools.ok_(repo_status["last_sync_duration"])
+        nose.tools.ok_(repo_status["next_sync_date"])
+
     def test_99_cleanup(self):
         """clean up"""
-        RHUIAPI.repo_delete([self.rh_repo_id, CUSTOM_REPO, CUSTOM_REPO_UN])
+        RHUIAPI.repo_delete([self.rh_repo["id"], CUSTOM_REPO, CUSTOM_REPO_UN])
         Expect.expect_retval(RHUA, f"rm -f {ENT_DIR_HOST}/{ENT}*")
         Expect.expect_retval(RHUA, f"rm -rf {ENT_DIR_HOST}/{RPM}*")
         Expect.expect_retval(CLI, f"rm -rf {DOWNDIR}")
