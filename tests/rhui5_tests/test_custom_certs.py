@@ -22,13 +22,17 @@ import time
 import logging
 import nose
 from stitches.expect import Expect
+import yaml
 
-from rhui5_tests_lib.cfg import RHUI_ROOT
+from rhui5_tests_lib.cfg import Config, RHUI_ROOT
 from rhui5_tests_lib.conmgr import ConMgr, SUDO_USER_NAME
 from rhui5_tests_lib.installer import RHUIInstaller
 from rhui5_tests_lib.rhuimanager import RHUIManager
 from rhui5_tests_lib.rhuimanager_instance import RHUIManagerInstance
+from rhui5_tests_lib.rhuimanager_cmdline import RHUIManagerCLI
 from rhui5_tests_lib.rhuimanager_cmdline_instance import RHUIManagerCLIInstance
+from rhui5_tests_lib.util import Util
+from rhui5_tests_lib.yummy import Yummy
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -38,6 +42,22 @@ CDS_HOSTNAME = ConMgr.get_cds_hostnames()[0]
 CDS = ConMgr.connect(CDS_HOSTNAME)
 HAPROXY_HOSTNAME = ConMgr.get_lb_hostname()
 NFS_HOSTNAME = ConMgr.get_nfs_hostname()
+
+try:
+    CLI = ConMgr.connect(ConMgr.get_cli_hostnames(fake=False)[0])
+    CLI_AVAILABLE = True
+    CLI_VERSION = Util.get_rhel_version(CLI)["major"]
+    CLI_ARCH = Util.get_arch(CLI)
+    with open("/etc/rhui5_tests/tested_repos.yaml", encoding="utf-8") as configfile:
+        DOC = yaml.safe_load(configfile)
+        TEST_REPO = DOC["yum_repos"][CLI_VERSION][CLI_ARCH]["id"]
+        TEST_LABEL = DOC["yum_repos"][CLI_VERSION][CLI_ARCH]["label"]
+        TEST_RPM = DOC["yum_repos"][CLI_VERSION][CLI_ARCH]["test_package"]
+    CONF_RPM_NAME = "cus"
+    RPM_DIR = "/root"
+    RPM_DIR_HOST = f"/var/lib/rhui{RPM_DIR}"
+except (IndexError, KeyError):
+    CLI_AVAILABLE = False
 
 CUSTOM_CERTS_DIR = "/root/test_files/custom_certs"
 CUSTOM_CERTS_DIR_HOST = "/var/lib/rhui" + CUSTOM_CERTS_DIR
@@ -190,10 +210,32 @@ def test_14_fetcher_plugin_ca_cert():
     output = stdout.read().decode()
     nose.tools.ok_("rhui_ca_crt" in output, msg=f"unexpected definition of 'ssl_ca_file': {output}")
 
+def test_15_client():
+    """check if a client can request on-demand content"""
+    if not CLI_AVAILABLE:
+        raise nose.SkipTest("No client is available.")
+    Config.set_sync_policy(RHUA, "on_demand")
+    RHUIManagerCLI.cert_upload(RHUA)
+    RHUIManagerCLI.repo_add_by_repo(RHUA, [TEST_REPO], True)
+    RHUIManagerCLI.client_rpm(RHUA, [TEST_LABEL], [CONF_RPM_NAME], RPM_DIR)
+    Util.remove_amazon_rhui_conf_rpm(CLI)
+    Util.install_pkg_from_rhua(RHUA,
+                               CLI,
+                               f"{RPM_DIR_HOST}/{CONF_RPM_NAME}-2.0/build/RPMS/noarch/" +
+                               f"{CONF_RPM_NAME}-2.0-1.noarch.rpm")
+    Yummy.download(CLI, [TEST_RPM], "/tmp")
+
 def test_99_cleanup():
     """clean up: rerun the installer with the original certificates and keys, remove the nodes"""
     if getenv("RHUIKEEPCUSTOMCERTS"):
         raise nose.SkipTest("Prevented")
+    if CLI_AVAILABLE:
+        Util.remove_rpm(CLI, [CONF_RPM_NAME])
+        Expect.expect_retval(CLI, f"rm -f /tmp/{TEST_RPM}*")
+        RHUIManagerCLI.repo_delete(RHUA, TEST_REPO)
+        RHUIManager.remove_rh_certs(RHUA)
+        Expect.expect_retval(RHUA, f"rm -rf {RPM_DIR_HOST}/{CONF_RPM_NAME}*")
+        Config.restore_rhui_tools_conf(RHUA)
     Expect.expect_retval(LAUNCHPAD, f"mount {NFS_HOSTNAME}:/export /mnt")
     Expect.expect_retval(LAUNCHPAD, f"mkdir {LOCALDIR}")
     Expect.expect_retval(LAUNCHPAD, f"cp -a /mnt/bak/* {LOCALDIR}")
