@@ -15,6 +15,7 @@ from stitches.expect import Expect
 
 from rhui5_tests_lib.cfg import Config, OFFICIAL_REGISTRY
 from rhui5_tests_lib.conmgr import ConMgr
+from rhui5_tests_lib.helpers import Helpers
 from rhui5_tests_lib.rhuimanager_cmdline_instance import RHUIManagerCLIInstance
 
 RHUA = ConMgr.connect()
@@ -115,6 +116,19 @@ def test_07_pgsql_locale():
     Expect.expect_retval(RHUA, restart_cmd)
     # chech the result only in the end
     nose.tools.eq_(restart_status, 0)
+
+def test_08_cds_slirp4netns():
+    """check if the CDS uses slirp4netns"""
+    if not Helpers.check_service(CDS, "rhui_cds"):
+        raise nose.SkipTest("The test CDS is down.")
+    _, stdout, _ = CDS.exec_command("pgrep slirp4netns")
+    output = stdout.read().decode().strip()
+    try:
+        int(output)
+        valid_pid = True
+    except ValueError:
+        valid_pid = False
+    nose.tools.ok_(valid_pid, msg=f"unexpected PID search result: '{output or '(nothing)'}'")
 
 def test_99_cleanup():
     """clean up"""
