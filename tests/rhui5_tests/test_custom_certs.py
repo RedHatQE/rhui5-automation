@@ -26,6 +26,7 @@ import yaml
 
 from rhui5_tests_lib.cfg import Config, RHUI_ROOT
 from rhui5_tests_lib.conmgr import ConMgr, SUDO_USER_NAME
+from rhui5_tests_lib.helpers import Helpers
 from rhui5_tests_lib.installer import RHUIInstaller
 from rhui5_tests_lib.rhuimanager import RHUIManager
 from rhui5_tests_lib.rhuimanager_instance import RHUIManagerInstance
@@ -216,6 +217,12 @@ def test_15_client():
         raise nose.SkipTest("No client is available.")
     Config.set_sync_policy(RHUA, "on_demand")
     RHUIManagerCLI.cert_upload(RHUA)
+    # make sure there are no leftovers from a previously executed test
+    RHUIManagerCLI.repo_orphan_cleanup(RHUA)
+    Helpers.wait_for_finished_tasks(RHUA)
+    RHUIManagerCLI.repo_symlink_cleanup(RHUA, deep_scan=True)
+    time.sleep(6)
+    # it's safe to add the repo and sync its metadata now
     RHUIManagerCLI.repo_add_by_repo(RHUA, [TEST_REPO], True)
     RHUIManagerCLI.client_rpm(RHUA, [TEST_LABEL], [CONF_RPM_NAME], RPM_DIR)
     Util.remove_amazon_rhui_conf_rpm(CLI)
