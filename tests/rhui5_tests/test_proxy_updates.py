@@ -19,6 +19,7 @@ import yaml
 
 from rhui5_tests_lib.cfg import Config
 from rhui5_tests_lib.conmgr import ConMgr
+from rhui5_tests_lib.helpers import Helpers
 from rhui5_tests_lib.pulp_api import PulpAPI
 from rhui5_tests_lib.rhuimanager import RHUIManager
 from rhui5_tests_lib.rhuimanager_cmdline import RHUIManagerCLI
@@ -88,7 +89,7 @@ class TestProxyUpdates():
 
     def test_04_sync_repo(self):
         """sync the test repo, which should apply the settings to the repo"""
-        is_proxy_available = PROXY_CON.recv_exit_status("systemctl status squid") == 0
+        is_proxy_available = Helpers.check_service(PROXY_CON, "squid")
         # sync the repo mainly to apply the settings to it, it's okay if the sync fails because
         # the stack wasn't installed with squid on the load balancer node
         RHUIManagerCLI.repo_sync(RHUA, self.test_repo, is_proxy_available)
