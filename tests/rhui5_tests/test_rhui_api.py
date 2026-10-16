@@ -570,7 +570,7 @@ class TestRhuiApi():
         # are they all up?
         nose.tools.ok_(all(svc["active"] for svc in status_list), msg=f"got: {status_list}")
         # are they all active?
-        nose.tools.ok_(all(service["active_state"] == "active" for service in status_list))
+        nose.tools.ok_(all(svc["active_state"] == "active" for svc in status_list))
         # are all the services checked?
         services = [svc["name"] for svc in status_list]
         for svc in ["nginx", "postgresql", "pulpcore-api", "pulpcore-content"]:
