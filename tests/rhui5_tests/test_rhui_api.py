@@ -549,6 +549,37 @@ class TestRhuiApi():
         nose.tools.ok_(repo_status["last_sync_duration"])
         nose.tools.ok_(repo_status["next_sync_date"])
 
+    @staticmethod
+    def test_18_rhua_status():
+        """check RHUA status"""
+        api_response = RHUIAPI.status_rhua()
+        try:
+            status_dict = json.loads(api_response)
+        except json.decoder.JSONDecodeError as err:
+            raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
+        # check the services
+        try:
+            status_list = status_dict["services"]
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
+        # are they all up?
+        nose.tools.ok_(all(svc["active"] for svc in status_list), msg=f"got: {status_list}")
+        # are they all active?
+        nose.tools.ok_(all(service["active_state"] == "active" for service in status_list))
+        # are all the services checked?
+        services = [svc["name"] for svc in status_list]
+        for svc in ["nginx", "postgresql", "pulpcore-api", "pulpcore-content"]:
+            nose.tools.ok_(svc + ".service" in services)
+        # are all the workers checked?
+        workers_api = [svc for svc in status_list if svc["name"].startswith("pulpcore-worker")]
+        worker_count_api = len(workers_api)
+        worker_count_cfg = int(Config.get_from_rhui_tools_conf(RHUA, "answers", "pulp_workers"))
+        nose.tools.eq_(worker_count_api, worker_count_cfg)
+
+        # check the entitlement cert
+        ent_ca_crt_dict = status_dict["entitlement_ca"]
+        nose.tools.ok_(not ent_ca_crt_dict["expired"], msg="got: {ent_ca_crt_dict}")
+
     def test_99_cleanup(self):
         """clean up"""
         RHUIAPI.repo_delete([self.rh_repo["id"], CUSTOM_REPO, CUSTOM_REPO_UN])

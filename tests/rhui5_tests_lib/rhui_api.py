@@ -236,3 +236,8 @@ class RHUIAPI():
     def status_repos():
         """list repositories with details and sync statuses"""
         return subprocess.getoutput(f"{BASE}status/repos")
+
+    @staticmethod
+    def status_rhua():
+        """status report for the RHUA node"""
+        return subprocess.getoutput(f"{BASE}status/rhua")
