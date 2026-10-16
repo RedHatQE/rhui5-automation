@@ -30,6 +30,10 @@ from rhui5_tests_lib.yummy import Yummy
 logging.basicConfig(level=logging.DEBUG)
 
 RHUA = ConMgr.connect()
+
+CDS_HOSTNAMES = ConMgr.get_cds_hostnames()
+HA_HOSTNAME = ConMgr.get_lb_hostname()
+
 # __reusable_clients_with_cds
 # To make this script communicate with a client machine different from cli01.example.com, run:
 # export RHUICLI=hostname
@@ -95,8 +99,9 @@ class TestRhuiApi():
             time.sleep(30)
         if not getenv("RHUISKIPSETUP"):
             RHUIManager.initial_run(RHUA)
-            RHUIManagerCLIInstance.add(RHUA, "cds", unsafe=True)
             RHUIManagerCLIInstance.add(RHUA, "haproxy", unsafe=True)
+            for cds in CDS_HOSTNAMES:
+                RHUIManagerCLIInstance.add(RHUA, "cds", cds, unsafe=True)
             RHUIManagerCLI.cert_upload(RHUA)
         RHUIAPI.get_ca_cert(RHUA)
         RHUIAPI.get_cookie(RHUA)
@@ -579,6 +584,61 @@ class TestRhuiApi():
         # check the entitlement cert
         ent_ca_crt_dict = status_dict["entitlement_ca"]
         nose.tools.ok_(not ent_ca_crt_dict["expired"], msg="got: {ent_ca_crt_dict}")
+
+    @staticmethod
+    def test_19_cds_status():
+        """check CDS status"""
+        api_response = RHUIAPI.status_cds()
+        try:
+            status_dict = json.loads(api_response)
+        except json.decoder.JSONDecodeError as err:
+            raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
+        # check the services
+        try:
+            status_list = status_dict["nodes"]
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
+        # are all the CDS nodes in the status report?
+        nose.tools.eq_(len(status_list), len(CDS_HOSTNAMES))
+        nose.tools.eq_(sorted([host["hostname"] for host in status_list]), sorted(CDS_HOSTNAMES))
+        # are all the services an all the CDS nodes up?
+        cds_services = ["gunicorn-auth", "gunicorn-content_manager", "gunicorn-mirror", "nginx"]
+        for host in status_list:
+            reported_services = sorted([svc["name"] for svc in host["services"]])
+            nose.tools.eq_(reported_services, [svc + ".service" for svc in cds_services])
+
+        for host in status_list:
+            nose.tools.ok_(all(svc["active"] for svc in host["services"]),
+                           msg=f"got: {status_list}")
+
+        for host in status_list:
+            nose.tools.ok_(all(svc["active_state"] == "active" for svc in host["services"]),
+                           msg=f"got: {status_list}")
+
+        # check the SSL cert
+        nose.tools.ok_(not any(host["ssl_certificate"]["expired"] for host in status_list))
+
+    @staticmethod
+    def test_20_haproxy_status():
+        """check HAPROXY status"""
+        api_response = RHUIAPI.status_haproxy()
+        try:
+            status_dict = json.loads(api_response)
+        except json.decoder.JSONDecodeError as err:
+            raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
+        try:
+            status_list = status_dict["nodes"]
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
+        # using only one LB
+        status = status_list[0]
+        # is the HAProxy node in the status report?
+        nose.tools.eq_(status["hostname"], HA_HOSTNAME)
+        # is the haproxy service on the HAProxy node, and is it up and active?
+        service = status["services"][0]
+        nose.tools.eq_(service["name"], "haproxy.service")
+        nose.tools.ok_(service["active"])
+        nose.tools.eq_(service["active_state"], "active")
 
     def test_99_cleanup(self):
         """clean up"""

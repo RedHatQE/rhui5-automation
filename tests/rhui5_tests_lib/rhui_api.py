@@ -241,3 +241,13 @@ class RHUIAPI():
     def status_rhua():
         """status report for the RHUA node"""
         return subprocess.getoutput(f"{BASE}status/rhua")
+
+    @staticmethod
+    def status_cds():
+        """status report for the CDS nodes"""
+        return subprocess.getoutput(f"{BASE}status/cds")
+
+    @staticmethod
+    def status_haproxy():
+        """status report for the HAProxy nodes"""
+        return subprocess.getoutput(f"{BASE}status/haproxy")
