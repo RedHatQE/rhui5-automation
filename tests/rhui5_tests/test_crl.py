@@ -151,7 +151,6 @@ class TestCRL():
     def test_12_check_crl():
         """check the revocation list on the RHUA again, should be empty"""
         crl = RHUIManagerCLI.client_revoked(RHUA)
-        # shouldn't be empty
         nose.tools.ok_(not crl, msg=f"Current CRL: {crl}")
 
     @staticmethod
