@@ -1,10 +1,13 @@
 """ RHUIManager Client functions """
 
 import re
+import time
 
 from stitches.expect import Expect
 
 from rhui5_tests_lib.rhuimanager import RHUIManager
+
+PROMPT = r"rhui \(client\) => "
 
 class ContainerSupportDisabledError(Exception):
     '''
@@ -102,3 +105,51 @@ class RHUIManagerClient():
                       f"Location: {dirname}/{rpmname}-{rpmversion}/build/RPMS/noarch/" +
                       f"{rpmname}-{rpmversion}-{rpmrelease}.noarch.rpm")
         Expect.enter(connection, "q")
+
+    @staticmethod
+    def revoke(connection, cert=None, serial=None, comment=None):
+        '''
+        revoke an entitlement certificate by its path or serial number
+        '''
+        RHUIManager.screen(connection, "client")
+        Expect.enter(connection, "r")
+        Expect.expect(connection, "Enter the path.*:")
+        if cert:
+            Expect.enter(connection, cert)
+        else:
+            Expect.enter(connection, "")
+            Expect.expect(connection, "Certificate serial number.*:")
+            Expect.enter(connection, str(serial))
+            Expect.expect(connection, "Warning.*:")
+            Expect.enter(connection, "y")
+        Expect.expect(connection, "Optional comment.*:")
+        Expect.enter(connection, comment or "")
+        RHUIManager.quit(connection, "Denylist updated")
+
+    @staticmethod
+    def unrevoke(connection, seriallist):
+        '''
+        unrevoke one or more entitlement certificates by their serial numbers
+        '''
+        RHUIManager.screen(connection, "client")
+        Expect.enter(connection, "u")
+        # the serial list may be a list of integers but we absolutely need a list of strings
+        strseriallist = list(map(str, seriallist))
+        RHUIManager.select(connection, strseriallist)
+        RHUIManager.proceed_with_check(connection,
+                                       "The following serials will be unrevoked:",
+                                       strseriallist)
+        RHUIManager.quit(connection)
+
+    @staticmethod
+    def revoked(connection):
+        '''
+        list revoked certificates; returns a nested list
+        '''
+        RHUIManager.screen(connection, "client")
+        Expect.enter(connection, "l")
+        output = Expect.match(connection, re.compile("(.*)" + PROMPT, re.DOTALL))[0]
+        Expect.enter(connection, "q")
+        time.sleep(5)
+        lines = [line for line in output.splitlines() if re.match(r"\d", line)]
+        return [line.split(maxsplit=2) for line in lines]

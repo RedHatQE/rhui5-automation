@@ -17,6 +17,7 @@ Welcome to the RHUI 5 Test Plan!
    compliance
    comps
    containers
+   crl
    custom_certs
    entitlements
    eus_cmd

@@ -602,6 +602,44 @@ class RHUIManagerCLI():
         raise RuntimeError("Execution failed" + response)
 
     @staticmethod
+    def client_revoke(connection, cert=None, serial=None, comment=None, force=False):
+        '''
+        revoke an entitlement certificate by its path or serial number
+        '''
+        cmd = "rhua rhui-manager client revoke"
+        if cert:
+            cmd += f" --cert {cert}"
+        if serial:
+            cmd += f" --serial {serial}"
+        if comment:
+            cmd += f" --comment '{comment}'"
+        if force:
+            cmd += " --force"
+        Expect.expect_retval(connection, cmd)
+
+    @staticmethod
+    def client_unrevoke(connection, cert=None, serial=None):
+        '''
+        unrevoke an entitlement certificate by its path or serial number
+        '''
+        cmd = "rhua rhui-manager client unrevoke"
+        if cert:
+            cmd += f" --cert {cert}"
+        if serial:
+            cmd += f" --serial {serial}"
+        Expect.expect_retval(connection, cmd)
+
+    @staticmethod
+    def client_revoked(connection):
+        '''
+        list revoked certificates; returns a nested list
+        '''
+        cmd = "rhua rhui-manager client revoked"
+        _, stdout, _ = connection.exec_command(cmd)
+        lines = stdout.read().decode().splitlines()
+        return [line.split(maxsplit=2) for line in lines[1:]]
+
+    @staticmethod
     def proxy_update(connection, force=False):
         '''
         propagate proxy settings from rhui-tools.conf to all repository remotes

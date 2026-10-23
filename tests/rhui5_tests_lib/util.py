@@ -194,6 +194,20 @@ class Util():
         return connection.recv_exit_status(cmd) == 1
 
     @staticmethod
+    def cert_serial(connection, cert):
+        '''
+        get the serial number of the given certificate
+        '''
+        file_exists = connection.recv_exit_status("test -f " + cert) == 0
+        if not file_exists:
+            raise OSError(cert + " does not exist")
+        cmd = f"openssl x509 -noout -serial -in {cert}"
+        _, stdout, _ = connection.exec_command(cmd)
+        output = stdout.read().decode()
+        sn = output.replace("serial=", "0x")
+        return int(sn, 16)
+
+    @staticmethod
     def fetch(connection, source, dest):
         '''
         fetch a file from the remote host
