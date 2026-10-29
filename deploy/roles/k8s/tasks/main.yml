@@ -2,22 +2,14 @@
 # file: roles/k8s/tasks/main.yml
 # generate and copy the k8s configuration YAML file
 
-- name: set a non-default K8s image name
-  lineinfile:
-    path: /var/lib/rhui/config/rhua/rhui-tools.conf
-    insertafter: "^\\[rhui\\]"
-    line: "default_container_cds_k8s_image: {{ cds_k8s_image }}"
-  when: cds_k8s_image is defined and inventory_hostname in groups['RHUA']
-  tags: kube
-
 - name: generate the default k8s configuration file
-  shell: "{{ rhui_manager_notty }} cds k8s --inject /etc/hosts:/etc/hosts > /tmp/test.yaml"
+  shell: "{{ rhui_manager_notty }} cds k8s --inject /etc/hosts:/etc/hosts {{ ('--container_image ' + cds_k8s_image + ' --force') if cds_k8s_image is defined else '' }} > /tmp/test.yaml"
   become_user: rhui
   when: inventory_hostname in groups['RHUA']
   tags: kube
 
 - name: generate the k8s configuration file with a TLS secret
-  shell: "{{ rhui_manager_notty }} cds k8s --ssl_cert_secret_name test --inject /etc/hosts:/etc/hosts > /tmp/test2.yaml"
+  shell: "{{ rhui_manager_notty }} cds k8s --ssl_cert_secret_name test --inject /etc/hosts:/etc/hosts {{ ('--container_image ' + cds_k8s_image + ' --force') if cds_k8s_image is defined else '' }} > /tmp/test2.yaml"
   become_user: rhui
   when: inventory_hostname in groups['RHUA']
   tags: kube

@@ -159,10 +159,13 @@ class RHUIAPI():
         return subprocess.getoutput(cmd)
 
     @staticmethod
-    def cds_k8s(ssl_cert_secret_name):
+    def cds_k8s(ssl_cert_secret_name, container_image=""):
         """generate K8s YAML"""
         data = {}
         data["ssl_cert_secret_name"] = ssl_cert_secret_name
+        if container_image:
+            data["container_image"] = container_image
+            data["force"] = True
         cmd = f"{BASE_COMMAND} -d '{json.dumps(data)}' {BASE_URL}cds/k8s"
         return subprocess.getoutput(cmd)
 

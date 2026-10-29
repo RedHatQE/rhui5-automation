@@ -1,7 +1,7 @@
 """Functions for the RHUI Configuration"""
 
 from configparser import ConfigParser
-
+import json
 from stitches.expect import Expect
 
 RHUI_CFG_STATIC = "/etc/rhui-static/rhui-tools-static.conf"
@@ -195,3 +195,25 @@ class Config():
         """restore the backup copy of the RHUI tools configuration file"""
         Expect.expect_retval(connection,
                              f"mv -f {RHUI_CFG_HOST_BAK_DIR}/{RHUI_CFG_BAK} {RHUI_CFG_HOST}")
+
+    @staticmethod
+    def get_rhui_version(connection):
+        """get the X.Y version of this RHUI"""
+        _, stdout, _ = connection.exec_command("rhua rpm -q --qf '%{VERSION}' rhui-tools")
+        full_version = stdout.read().decode()
+        versions_fields = full_version.split(".")
+        x_y = f"{versions_fields[0]}.{versions_fields[1]}"
+        return x_y
+
+    @staticmethod
+    def get_instance_data(connection, instance_type, hostname):
+        """get information about a CDS or an HAProxy node"""
+        _, stdout, _ = connection.exec_command(f"rhua cat /etc/rhui/{instance_type}.json")
+        try:
+            instance_data = json.load(stdout)
+        except json.decoder.JSONDecodeError as err:
+            raise RuntimeError(f"JSON decode error: {err}") from err
+        matched_instance_data = [data for data in instance_data if data["hostname"] == hostname]
+        if not matched_instance_data:
+            raise RuntimeError("No such hostname is tracked.")
+        return matched_instance_data[0]

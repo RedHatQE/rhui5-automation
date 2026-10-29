@@ -357,6 +357,9 @@ class TestRhuiApi():
         """generate K8s configuration and check it"""
         secret = "testsecret"
         expected_kinds = ["ConfigMap", "Deployment", "Secret", "Service"]
+        image_name = "rhui5/cds-kubernetes-rhel9"
+        registry = Config.get_registry_data(RHUA)[0]
+        actual_rhui_version = Config.get_rhui_version(RHUA)
         api_response = RHUIAPI.cds_k8s(secret)
         # try one more time if there's an issue
         if "curl:" in api_response:
@@ -376,6 +379,18 @@ class TestRhuiApi():
         k8s_yaml = yaml.safe_load_all(k8s_dict["manifest"])
         data = list(k8s_yaml)
         nose.tools.eq_(sorted([item["kind"] for item in data]), expected_kinds)
+        # check version pinning
+        deployment = [i for i in data if i["kind"] == "Deployment"][0]
+        nose.tools.eq_(deployment["spec"]["template"]["spec"]["containers"][0]["image"],
+                       f"{registry}/{image_name}:{actual_rhui_version}")
+        # check using a custom CDS K8s image
+        api_response = RHUIAPI.cds_k8s(secret, f"{image_name}:test")
+        k8s_dict_ti = json.loads(api_response)
+        k8s_yaml_ti = yaml.safe_load_all(k8s_dict_ti["manifest"])
+        data_ti = list(k8s_yaml_ti)
+        deployment = [i for i in data_ti if i["kind"] == "Deployment"][0]
+        nose.tools.eq_(deployment["spec"]["template"]["spec"]["containers"][0]["image"],
+                       f"{registry}/{image_name}:test")
 
     def test_12_labels(self):
         """list repo labels"""

@@ -113,6 +113,11 @@ class RHUIManagerInstance():
         Expect.enter(connection, registry)
         Expect.expect(connection, "Container image")
         Expect.enter(connection, image or default_image)
+        # If an image is specified as a parameter or in the configuration, say yes now;
+        # otherwise it would be impossible to test scratch CDS images.
+        if screen == "cds" and (image or default_image):
+            Expect.expect(connection, "Overriding")
+            Expect.enter(connection, "y")
         Expect.expect(connection, "Optional username")
         Expect.enter(connection, "" if auth_exists else username)
         if not auth_exists and password:
@@ -192,15 +197,16 @@ class RHUIManagerInstance():
         return [cds for _, cds in ret]
 
     @staticmethod
-    def reinstall(connection, screen):
+    def reinstall(connection, screen, index=1):
         '''
         reinstall the CDS or HAProxy instances; only one (the first)
         '''
+        # Specify the repo by its index (1+), not its name (for technical reasons).
         tracked_instances = RHUIManagerInstance.list(connection, screen)
         if not tracked_instances:
             raise NoSuchInstance()
         RHUIManager.screen(connection, screen)
         Expect.enter(connection, "r")
         Expect.expect(connection, "Enter value .*:")
-        Expect.enter(connection, "1")
+        Expect.enter(connection, str(index))
         RHUIManager.quit(connection, "", 480)
