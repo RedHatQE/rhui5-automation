@@ -45,10 +45,19 @@
   when: inventory_hostname in groups['HAPROXY']
   tags: kube
 
+- name: check if the test TLS secret already exists
+  command: minikube kubectl -- describe secret test
+  become: False
+  register: check_test_secret
+  when: inventory_hostname in groups['HAPROXY']
+  changed_when: False
+  failed_when: check_test_secret.rc > 1
+  tags: kube
+
 - name: create the TLS secret in Minikube
   command: minikube kubectl -- create secret tls test --cert=/tmp/lb.example.com.crt --key=/tmp/lb.example.com.key
   become: False
-  when: inventory_hostname in groups['HAPROXY']
+  when: inventory_hostname in groups['HAPROXY'] and check_test_secret.rc == 1
   tags: kube
 
 - name: upload the list of additional manual commands
