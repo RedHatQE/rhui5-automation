@@ -218,7 +218,7 @@ def test_15_client():
     Config.set_sync_policy(RHUA, "on_demand")
     RHUIManagerCLI.cert_upload(RHUA)
     # make sure there are no leftovers from a previously executed test
-    RHUIManagerCLI.repo_orphan_cleanup(RHUA)
+    RHUIManagerCLI.repo_orphan_cleanup(RHUA, 0)
     Helpers.wait_for_finished_tasks(RHUA)
     RHUIManagerCLI.repo_symlink_cleanup(RHUA, deep_scan=True)
     time.sleep(6)

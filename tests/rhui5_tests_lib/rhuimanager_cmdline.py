@@ -403,7 +403,7 @@ class RHUIManagerCLI():
 
     @staticmethod
     def repo_orphan_cleanup(connection,
-                            orphan_protection_time=0,
+                            orphan_protection_time=-1,
                             batch_size=0,
                             max_batches=0,
                             dry_run=False):
@@ -411,7 +411,7 @@ class RHUIManagerCLI():
         schedule tasks to clean up orphaned artifacts
         '''
         cmd = "rhua rhui-manager repo orphan_cleanup"
-        if orphan_protection_time:
+        if orphan_protection_time >= 0:
             cmd += f" --orphan_protection_time={orphan_protection_time}"
         if batch_size:
             cmd += f" --batch_size={batch_size}"

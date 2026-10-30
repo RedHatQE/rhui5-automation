@@ -189,7 +189,8 @@ class TestSyncPolicies():
         for repo in [self.regular_repo, self.debug_repo, self.source_repo]:
             RHUIManagerCLI.repo_delete(RHUA, repo)
         # remove orphans and symlinks
-        RHUIManagerCLI.repo_orphan_cleanup(RHUA)
+        RHUIManagerCLI.repo_orphan_cleanup(RHUA, 0)
+        Helpers.wait_for_finished_tasks(RHUA)
         Helpers.clear_symlinks(RHUA)
         # remove client build artifacts
         Expect.expect_retval(RHUA, f"rm -rf {WORKDIR_HOST}*")
