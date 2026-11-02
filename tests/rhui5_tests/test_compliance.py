@@ -95,13 +95,29 @@ def test_06_wanted_rpms():
     Expect.expect_retval(RHUA, "rhua rpm -q rpm-sign && rhua rpmsign --version")
     Expect.expect_retval(RHUA, "rhua rpm -q glibc-all-langpacks")
     # also check RPMs on CDS & HAProxy nodes, but only if they're configured
-    if CDS.recv_exit_status("systemctl status rhui_cds") == 0:
+    cds_exists = Helpers.check_service(CDS, "rhui_cds")
+    haproxy_exists = Helpers.check_service(HAPROXY, "rhui_haproxy")
+    if cds_exists:
         Expect.expect_retval(CDS, "cds rpm -q logrotate && "
                                   "cds systemctl status logrotate.timer | grep Trigger:")
+    if haproxy_exists:
         Expect.expect_retval(HAPROXY, "ha rpm -q logrotate && "
                                       "ha systemctl status logrotate.timer | grep Trigger:")
 
-def test_07_pgsql_locale():
+def test_07_unwanted_rpms():
+    """check for extra RPMs in the containers that CCSPs wished to avoid"""
+    unwanted_rpms = ["gdb-gdbserver"]
+    cds_exists = Helpers.check_service(CDS, "rhui_cds")
+    haproxy_exists = Helpers.check_service(HAPROXY, "rhui_haproxy")
+    for rpm in unwanted_rpms:
+        Expect.expect_retval(RHUA, f"rhua rpm -q {rpm}", 1)
+        # also check RPMs on CDS & HAProxy nodes, but only if they're configured
+        if cds_exists:
+            Expect.expect_retval(CDS, f"cds rpm -q {rpm}", 1)
+        if haproxy_exists:
+            Expect.expect_retval(HAPROXY, f"ha rpm -q {rpm}", 1)
+
+def test_08_pgsql_locale():
     """check if PostgreSQL can run with a non-defalt locale setting"""
     default_locale = "C.UTF-8"
     other_locale = "ja_JP.UTF-8"
@@ -117,7 +133,7 @@ def test_07_pgsql_locale():
     # chech the result only in the end
     nose.tools.eq_(restart_status, 0)
 
-def test_08_cds_slirp4netns():
+def test_09_cds_slirp4netns():
     """check if the CDS uses slirp4netns"""
     if not Helpers.check_service(CDS, "rhui_cds"):
         raise nose.SkipTest("The test CDS is down.")
