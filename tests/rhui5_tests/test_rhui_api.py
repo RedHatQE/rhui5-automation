@@ -600,6 +600,10 @@ class TestRhuiApi():
         ent_ca_crt_dict = status_dict["entitlement_ca"]
         nose.tools.ok_(not ent_ca_crt_dict["expired"], msg="got: {ent_ca_crt_dict}")
 
+        # check the Pulp SSL cert
+        ent_ca_crt_dict = status_dict["pulp_ssl"]
+        nose.tools.ok_(not ent_ca_crt_dict["expired"], msg="got: {ent_ca_crt_dict}")
+
     @staticmethod
     def test_19_cds_status():
         """check CDS status"""
