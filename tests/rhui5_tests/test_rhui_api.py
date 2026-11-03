@@ -6,8 +6,8 @@
 # in your shell before running this script.
 # The cleanup will be skipped, too, so you ought to clean up eventually.
 
-from os import getenv
-from os.path import basename
+from os import getenv, remove
+from os.path import basename, exists
 import time
 
 from configparser import ConfigParser
@@ -17,7 +17,7 @@ import nose
 from stitches.expect import Expect
 import yaml
 
-from rhui5_tests_lib.cfg import Config, RHUI_CFG_HOST_BAK_DIR, RHUI_CFG_BAK
+from rhui5_tests_lib.cfg import Config
 from rhui5_tests_lib.conmgr import ConMgr
 from rhui5_tests_lib.installer import RHUIInstaller
 from rhui5_tests_lib.rhuimanager import RHUIManager
@@ -59,6 +59,7 @@ UPLOAD_RPM_2_NAME_VR = ["rhui-rpm-upload-trial", "1-1"]
 UPLOAD_RPM_3 = "rhui-rpm-upload-tryout"
 DOWNDIR = "/tmp/test-api-dir"
 TEST_PKG_RESERVED = "compat-sap-c++-10"
+SIGNAL_FILE = "/tmp/needs_reinstalling"
 
 class TestRhuiApi():
     """class for RHUI API tests"""
@@ -79,6 +80,9 @@ class TestRhuiApi():
                 self.test_package = doc["yum_repos"][self.version][arch]["test_package"]
                 self.product_name = doc["product"]["name"]
                 self.product_ids = doc["product"]["ids"]
+                self.dup_ids = [doc["sync_policy_repos"][10]["debug"],
+                                doc["sync_policy_repos"][10]["debug"],
+                                doc["sync_policy_repos"][10]["source"]]
             except KeyError:
                 raise nose.SkipTest(f"No test repo defined for RHEL {self.version} on {arch}") \
                 from None
@@ -91,12 +95,20 @@ class TestRhuiApi():
     @staticmethod
     def test_00_init():
         """initialize the environment"""
+        # use the on-demand sync policy; no need to wait until all the packages are synced
+        Config.set_sync_policy(RHUA, "on_demand")
+        # use a longer session length - the default may be too short for this test case
+        Config.set_rhui_tools_conf(RHUA, "api", "session_length", "1200", False)
+        # if the API isn't enabled, apply the new session length, else rerun the installer
         enabled = Config.get_from_rhui_tools_conf(RHUA, "api", "restapi_support_enabled")
         if enabled != "True":
-            Config.set_rhui_tools_conf(RHUA, "api", "restapi_support_enabled", "True")
-            Config.set_rhui_tools_conf(RHUA, "api", "session_length", "1200", False)
+            Config.set_rhui_tools_conf(RHUA, "api", "restapi_support_enabled", "True", False)
             RHUIInstaller.rerun()
             time.sleep(30)
+            with open(SIGNAL_FILE, "w", encoding="utf-8"):
+                pass
+        else:
+            Expect.expect_retval(RHUA, "rhua systemctl restart rhui-api")
         if not getenv("RHUISKIPSETUP"):
             RHUIManager.initial_run(RHUA)
             RHUIManagerCLIInstance.add(RHUA, "haproxy", unsafe=True)
@@ -142,6 +154,14 @@ class TestRhuiApi():
         response_lines = [json.loads(line) for line in api_response.splitlines()]
         nose.tools.ok_("error" not in response_lines[0],
                        msg=f"response: {response_lines}")
+        # add duplicate repos, should be handled well
+        api_response = RHUIAPI.repo_add(self.dup_ids)
+        response_lines = [json.loads(line) for line in api_response.splitlines()]
+        skipped = [line for line in response_lines if line["type"] == "skipped"][0]
+        nose.tools.eq_(skipped["repo_id"], self.dup_ids[1])
+        nose.tools.eq_(skipped["reason"], "duplicate")
+        done = [line for line in response_lines if line["type"] == "done"][0]
+        nose.tools.eq_(done["created_count"], len(set(self.dup_ids)))
 
     def test_03_list_repos(self):
         """list repos and check if they're all present"""
@@ -151,12 +171,15 @@ class TestRhuiApi():
         except json.decoder.JSONDecodeError as err:
             raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
         # check the number of repos (two custom, one added by its ID and several by the product)
-        nose.tools.eq_(len(repo_list_dict["repositories"]), 3 + len(self.product_ids))
+        # plus the deduplicated repos
+        nose.tools.eq_(len(repo_list_dict["repositories"]),
+                       3 + len(self.product_ids) + len(set(self.dup_ids)))
         try:
             actual_repos = [repo["id"] for repo in repo_list_dict["repositories"]]
         except KeyError as err:
             raise RuntimeError(f"response: {api_response}") from err
-        expected_repos = [CUSTOM_REPO, CUSTOM_REPO_UN, self.rh_repo["id"]] + self.product_ids
+        expected_repos = [CUSTOM_REPO, CUSTOM_REPO_UN, self.rh_repo["id"]] + self.product_ids + \
+                         list(set(self.dup_ids))
         nose.tools.eq_(sorted(actual_repos), sorted(expected_repos))
 
     def test_04_repo_info(self):
@@ -222,8 +245,8 @@ class TestRhuiApi():
             sync_tasks = [line for line in response_lines if line["type"] == "scheduled"]
         except KeyError as err:
             raise RuntimeError(f"response: {api_response}") from err
-        # expect as many tasks as there are repos in the product plus the base RH repo
-        nose.tools.eq_(len(sync_tasks), len(self.product_ids) + 1)
+        # expect as many tasks as there are repos in the product plus dupes plus the base RH repo
+        nose.tools.eq_(len(sync_tasks), len(self.product_ids) + len(set(self.dup_ids)) + 1)
         time.sleep(5)
         # wait until there are no waiting tasks
         while json.loads(RHUIAPI.tasks_waiting())["tasks"]:
@@ -259,7 +282,7 @@ class TestRhuiApi():
         # check the repos that remained
         api_response = RHUIAPI.repo_list(True)
         repo_list_dict = json.loads(api_response)
-        nose.tools.eq_(len(repo_list_dict["repositories"]), 3)
+        nose.tools.eq_(len(repo_list_dict["repositories"]), 5)
         # check if sync information is in the response
         nose.tools.ok_(all("last_sync_date" in info for info in repo_list_dict["repositories"]),
                        msg=f"repo list: {repo_list_dict}")
@@ -661,7 +684,8 @@ class TestRhuiApi():
 
     def test_99_cleanup(self):
         """clean up"""
-        RHUIAPI.repo_delete([self.rh_repo["id"], CUSTOM_REPO, CUSTOM_REPO_UN])
+        RHUIAPI.repo_delete([self.rh_repo["id"], CUSTOM_REPO, CUSTOM_REPO_UN] + \
+                            list(set(self.dup_ids)))
         Expect.expect_retval(RHUA, f"rm -f {ENT_DIR_HOST}/{ENT}*")
         Expect.expect_retval(RHUA, f"rm -rf {ENT_DIR_HOST}/{RPM}*")
         Expect.expect_retval(CLI, f"rm -rf {DOWNDIR}")
@@ -671,10 +695,11 @@ class TestRhuiApi():
             RHUIManagerCLIInstance.delete(RHUA, "cds", force=True)
             ConMgr.remove_ssh_keys(RHUA)
             RHUIManager.remove_rh_certs(RHUA)
-        if RHUA.recv_exit_status(f"test -f {RHUI_CFG_HOST_BAK_DIR}/{RHUI_CFG_BAK}") == 0:
-            Config.restore_rhui_tools_conf(RHUA)
+        Config.restore_rhui_tools_conf(RHUA)
+        if exists(SIGNAL_FILE):
             RHUIInstaller.rerun()
             time.sleep(30)
+            remove(SIGNAL_FILE)
         RHUIAPI.del_cookie()
 
     @staticmethod

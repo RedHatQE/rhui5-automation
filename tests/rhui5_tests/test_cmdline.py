@@ -56,6 +56,7 @@ IMPORT_REPO_FILES = {"good": join(IMPORT_REPO_FILES_DIR, "good_repos.yaml"),
                      "noids": join(IMPORT_REPO_FILES_DIR, "no_repo_ids.yaml"),
                      "badname": join(IMPORT_REPO_FILES_DIR, "bad_name.yaml"),
                      "badids": join(IMPORT_REPO_FILES_DIR, "bad_ids.yaml"),
+                     "dupids": join(IMPORT_REPO_FILES_DIR, "dup_ids.yaml"),
                      "notafile": join(IMPORT_REPO_FILES_DIR, "not_a_file.yaml")}
 
 class TestCLI():
@@ -225,6 +226,13 @@ class TestCLI():
         # test an unrecognized option
         cmd = "rhua rhui-manager repo add_by_repo --repo_ids boo --names Boo"
         Expect.expect_retval(RHUA, cmd, 254)
+        # try using duplicate repo IDs
+        RHUIManagerCLI.repo_add_by_repo(RHUA, [self.product_ids[0],
+                                               self.product_ids[0],
+                                               self.product_ids[1]])
+        # delete these repos
+        for repo in [self.product_ids[0], self.product_ids[1]]:
+            RHUIManagerCLI.repo_delete(RHUA, repo)
 
     def test_13_add_rh_repo_by_product(self):
         '''add a Red Hat repo by its product name'''
@@ -665,7 +673,10 @@ class TestCLI():
         nose.tools.eq_(expected_repo_ids, actual_repo_ids)
         # re-adding the repos should produce a bad exit code
         RHUIManagerCLI.repo_add_by_file(RHUA, IMPORT_REPO_FILES["good"], False, "already_added")
+        # try a file with duplicate repo IDs
+        RHUIManagerCLI.repo_add_by_file(RHUA, IMPORT_REPO_FILES["dupids"])
         # clean up
+        actual_repo_ids = RHUIManagerCLI.repo_list(RHUA, True).splitlines()
         for repo in actual_repo_ids:
             RHUIManagerCLI.repo_delete(RHUA, repo)
         RHUIManager.remove_rh_certs(RHUA)
