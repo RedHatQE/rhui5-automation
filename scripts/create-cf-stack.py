@@ -70,11 +70,16 @@ argparser.add_argument('--small', help='launch small instance types', action='st
 
 args = argparser.parse_args()
 
+fs_type = "rhua"
+
+if args.cli_only:
+    args.launchpad_os = args.cds = args.haproxy = 0
+    fs_type = ""
+    args.small = True
+
 instance_types = {"arm64": "t4g.medium" if args.small else "t4g.large",
                   "x86_64": "t3.small" if args.small else "m5.large"}
 kube_instance_type = "t2.2xlarge"
-
-fs_type = "rhua"
 
 if args.debug:
     loglevel = logging.DEBUG
@@ -90,11 +95,6 @@ if args.cli_all:
     args.cli8 = args.cli8 or -1
     args.cli9 = args.cli9 or -1
     args.cli10 = args.cli10 or -1
-
-if args.cli_only:
-    args.launchpad_os = args.cds = args.haproxy = 0
-    fs_type = ""
-    args.small = True
 
 if args.boxed:
     args.cds = args.haproxy = 0
