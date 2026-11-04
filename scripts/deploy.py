@@ -71,7 +71,7 @@ PRS.add_argument("--auth",
                       f"'_' as an alias for auth.json in {RHUI_DIR}",
                  metavar="file")
 PRS.add_argument("--custom-certs",
-                 help=f"install RHUI with custom certificates",
+                 help="install RHUI with custom certificates",
                  action="store_true")
 PRS.add_argument("--creds-in-answers",
                  help="supply registry credentials in the answers file",
@@ -180,9 +180,9 @@ elif PRESET_RHUA_IMAGE:
     EVARS += " rhua_image=" + PRESET_RHUA_IMAGE
 
 if ARGS.cds_k8s_image:
-     EVARS += " cds_k8s_image=" + ARGS.cds_k8s_image
+    EVARS += " cds_k8s_image=" + ARGS.cds_k8s_image
 elif PRESET_CDS_K8S_IMAGE:
-     EVARS += " cds_k8s_image=" + PRESET_CDS_K8S_IMAGE
+    EVARS += " cds_k8s_image=" + PRESET_CDS_K8S_IMAGE
 
 if ARGS.rhsm:
     EVARS += " rhsm=True"

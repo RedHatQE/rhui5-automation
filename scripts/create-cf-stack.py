@@ -70,6 +70,10 @@ argparser.add_argument('--small', help='launch small instance types', action='st
 
 args = argparser.parse_args()
 
+instance_types = {"arm64": "t4g.medium" if args.small else "t4g.large",
+                  "x86_64": "t3.small" if args.small else "m5.large"}
+kube_instance_type = "t2.2xlarge"
+
 fs_type = "rhua"
 
 if args.debug:
@@ -132,10 +136,6 @@ json_dict['AWSTemplateFormatVersion'] = '2010-09-09'
 
 if args.nfs:
     fs_type = "nfs"
-
-instance_types = {"arm64": "t4g.medium" if args.small else "t4g.large",
-                  "x86_64": "t3.small" if args.small else "m5.large"}
-kube_instance_type = "t2.2xlarge"
 
 if args.kube:
     args.cds = 0

@@ -42,27 +42,28 @@ else:
     sys.stderr.write("Wrong parameters")
     sys.exit(1)
 
-CMD = "aws ec2 describe-regions " \
+cmd = "aws ec2 describe-regions " \
       "--all-regions " \
       "--query 'Regions[].{Name:RegionName}' " \
       "--output text"
-cmd_out = subprocess.check_output(CMD, shell=True)
+cmd_out = subprocess.check_output(cmd, shell=True)
 regions = cmd_out.decode().splitlines()
 
 if args.skip_regions:
     for region in args.skip_regions.split(','):
         regions.remove(region)
 
-CMD = "aws ec2 describe-images " \
+cmd = "aws ec2 describe-images " \
       "--filters Name=name,Values=*{0}* " \
       "--query Images[*].ImageId --region {1}"
 
 out_dict = {}
 
 for i in regions:
-    print(CMD.format(args.rhel, i))
-    ami = subprocess.Popen(CMD.format(args.rhel, i).split(), stdout=subprocess.PIPE)
-    out, err = ami.communicate()
+    print(cmd.format(args.rhel, i))
+    with subprocess.Popen(cmd.format(args.rhel, i).split(),
+                           stdout=subprocess.PIPE) as ami:
+        out, err = ami.communicate()
     js = json.loads(out)
     try:
         AMI_ID = js[0]
