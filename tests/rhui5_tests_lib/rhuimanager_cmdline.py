@@ -454,6 +454,16 @@ class RHUIManagerCLI():
         Expect.expect_retval(connection, cmd, 254 if expect_trouble else 0)
 
     @staticmethod
+    def repo_tasks_purge(connection, older_than_days=None):
+        '''
+        clean up Pulp's old tasks
+        '''
+        cmd = "rhua rhui-manager repo tasks_purge"
+        if older_than_days is not None:
+            cmd += f" --older_than_days {older_than_days}"
+        Expect.expect_retval(connection, cmd)
+
+    @staticmethod
     def packages_list(connection, repo_id):
         '''
         return a list of packages present in the repo

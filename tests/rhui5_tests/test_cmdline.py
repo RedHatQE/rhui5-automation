@@ -874,6 +874,19 @@ class TestCLI():
         Expect.expect_retval(RHUA, cmd)
 
     @staticmethod
+    def test_56_tasks_purge():
+        '''check if rhui-manager can have old Pulp tasks removed'''
+        # get a list of old tasks
+        completed_tasks = PulpAPI.list_tasks(RHUA, ["completed"])
+        nose.tools.ok_(len(completed_tasks) > 1, msg="not enough completed tasks to test")
+        RHUIManagerCLI.repo_tasks_purge(RHUA, 0)
+        # wait until the purge is done and then refresh the list of old tasks
+        Helpers.wait_for_finished_tasks(RHUA)
+        completed_tasks = PulpAPI.list_tasks(RHUA, ["completed"])
+        # only a single completed task should remain - the purge itself
+        nose.tools.eq_(len(completed_tasks), 1)
+
+    @staticmethod
     def test_99_cleanup():
         '''cleanup: remove temporary files'''
         rmtree(TMPDIR_LOCAL)
