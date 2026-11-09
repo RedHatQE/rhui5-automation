@@ -153,7 +153,16 @@ if args.cli10 == -1:
     args.cli10 = len(instance_types)
     args.cli10_arch = ",".join(instance_types.keys())
 
-json_dict['Description'] = "Client-only stack" if args.cli_only else "RHUI-in-a-box" if args.boxed else f"RHUI with {args.cds} CDS and {args.haproxy} HAProxy nodes"
+if args.cli_only:
+    json_dict['Description'] = "Client-only stack"
+else:
+    if args.boxed:
+        json_dict['Description'] = "RHUI-in-a-box"
+    else:
+        if args.kube:
+            json_dict['Description'] = "RHUI in K8s"
+        else:
+            json_dict['Description'] = f"RHUI with {args.cds} CDS and {args.haproxy} HAProxy nodes"
 if args.cli7 > 0:
     json_dict['Description'] += f", {args.cli7} RHEL7 client" + ("s" if args.cli7 > 1 else "")
 if args.cli8 > 0:
