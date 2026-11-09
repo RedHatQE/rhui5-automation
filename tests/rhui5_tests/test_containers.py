@@ -127,6 +127,13 @@ class TestClient():
                                                     CONF_RPM_VERSION,
                                                     CONF_RPM_RELEASE)
         Expect.expect_retval(RHUA, f"test -f {CONF_RPM_PATH_HOST}")
+        # test RPM requirements:
+        _, stdout, _ = RHUA.exec_command(f"rpm -qpR {CONF_RPM_PATH_HOST}")
+        output = stdout.read().decode()
+        # must not require yum
+        nose.tools.ok_("yum" not in output, msg=f"requires: {output}")
+        # must require podman
+        nose.tools.ok_("podman" in output, msg=f"requires: {output}")
 
     @staticmethod
     def test_08_install_cli_rpm():

@@ -324,6 +324,11 @@ class TestCLI():
         conf_rpm = f"{TMPDIR_HOST}/{CLI_CFG[0]}-{CLI_CFG[1]}/build/RPMS/noarch/" + \
                    f"{CLI_CFG[0]}-{CLI_CFG[1]}-{CLI_CFG[2]}.noarch.rpm"
         Expect.expect_retval(RHUA, f"test -f {conf_rpm}")
+        # test RPM requirements:
+        # must not require yum
+        _, stdout, _ = RHUA.exec_command(f"rpm -qpR {conf_rpm}")
+        output = stdout.read().decode()
+        nose.tools.ok_("yum" not in output, msg=f"requires: {output}")
         # test an unrecognized option
         cmd = "rhua rhui-manager client rpm --wizard"
         Expect.expect_retval(RHUA, cmd, 254)
