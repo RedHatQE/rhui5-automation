@@ -18,6 +18,7 @@ import yaml
 
 from rhui5_tests_lib.cfg import Config, RHUI_ROOT
 from rhui5_tests_lib.conmgr import ConMgr
+from rhui5_tests_lib.helpers import Helpers
 from rhui5_tests_lib.rhuimanager import RHUIManager
 from rhui5_tests_lib.rhuimanager_cmdline import RHUIManagerCLI
 from rhui5_tests_lib.rhuimanager_cmdline_instance import RHUIManagerCLIInstance
@@ -78,12 +79,15 @@ class TestRhuiManagerStatus():
         expected_exit_code = OK
         Expect.expect_retval(RHUA, CMD, expected_exit_code, TIMEOUT)
         # also check the certs in the output
+        expected_cert_reports = ["Entitlement CA", "RHUA Pulp"]
+        if Helpers.check_service(CDS, "rhui_cds"):
+            expected_cert_reports.append("SSL certificate")
         _, stdout, _ = RHUA.exec_command(VERBOSE_CMD)
         output_list = stdout.read().decode().splitlines()
         cert_info_lines = [Util.uncolorify(ln) for ln in output_list if "expiration date" in ln]
         cert_reports = [" ".join(crt.split()[:2]) for crt in cert_info_lines]
         cert_expiration_state_set = {status.split()[-1] for status in cert_info_lines}
-        nose.tools.eq_(cert_reports, ["Entitlement CA", "RHUA Pulp"])
+        nose.tools.eq_(cert_reports, expected_cert_reports)
         nose.tools.eq_(cert_expiration_state_set, {"OK"})
 
     def test_02_add_repos(self):
