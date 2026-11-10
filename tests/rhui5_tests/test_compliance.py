@@ -146,6 +146,14 @@ def test_09_cds_slirp4netns():
         valid_pid = False
     nose.tools.ok_(valid_pid, msg=f"unexpected PID search result: '{output or '(nothing)'}'")
 
+def test_10_cds_upstream_rhua_ssl():
+    """check if rhua_ssl isn't configured on the CDS by default"""
+    if not Helpers.check_service(CDS, "rhui_cds"):
+        raise nose.SkipTest("The test CDS is down.")
+    _, stdout, _ = CDS.exec_command("cds grep -A2 rhua-ssl /etc/nginx/conf.d/ssl.conf")
+    output = stdout.read().decode().strip()
+    nose.tools.ok_(not output, msg=f"unexpected configuration: '{output}'")
+
 def test_99_cleanup():
     """clean up"""
     if not getenv("RHUISKIPSETUP"):
