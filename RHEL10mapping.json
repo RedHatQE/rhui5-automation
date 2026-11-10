@@ -1,98 +1,98 @@
 {
     "af-south-1": {
-        "AMI": "ami-0ea5f6203aeacabf3"
+        "AMI": "ami-05a897f78c998a4c9"
     },
     "ap-east-1": {
-        "AMI": "ami-0d872527120641d9d"
+        "AMI": "ami-0fad9a5b2afff2eba"
     },
     "ap-east-2": {
-        "AMI": "ami-0de44c55ba5bfbf13"
+        "AMI": "ami-0c391fd60a70cfdbd"
     },
     "ap-northeast-1": {
-        "AMI": "ami-08f50e9880b8b105e"
+        "AMI": "ami-0f258417a857fb375"
     },
     "ap-northeast-2": {
-        "AMI": "ami-08ee6053c79da3fcc"
+        "AMI": "ami-011162e81a31fef4a"
     },
     "ap-northeast-3": {
-        "AMI": "ami-0b05c63ab0afb20ac"
+        "AMI": "ami-02ee918f7a520fb58"
     },
     "ap-south-1": {
-        "AMI": "ami-0fbe915c156521ee2"
+        "AMI": "ami-0b322e317e935fa40"
     },
     "ap-south-2": {
-        "AMI": "ami-0f9086d47a44a89cd"
+        "AMI": "ami-01c5d55a652b5b98b"
     },
     "ap-southeast-1": {
-        "AMI": "ami-0d3e9a1bef9f24b1f"
+        "AMI": "ami-070f8c52be6f862fa"
     },
     "ap-southeast-2": {
-        "AMI": "ami-0753b3c25611b31a0"
+        "AMI": "ami-034c965fce07c3805"
     },
     "ap-southeast-3": {
-        "AMI": "ami-019f9ce8242fd5455"
+        "AMI": "ami-098f2db5b08009bb3"
     },
     "ap-southeast-4": {
-        "AMI": "ami-0e057a74cddd76d1b"
+        "AMI": "ami-0f6a2b536d5592b70"
     },
     "ap-southeast-5": {
-        "AMI": "ami-0100e5bef8031a0b7"
+        "AMI": "ami-0d02d70666935b4e5"
     },
     "ap-southeast-6": {
-        "AMI": "ami-06a4b379f6aac3328"
+        "AMI": "ami-065e8dc67ea70967c"
     },
     "ap-southeast-7": {
-        "AMI": "ami-09e900e7bffc0321b"
+        "AMI": "ami-01dc191f8a121b7ea"
     },
     "ca-central-1": {
-        "AMI": "ami-02024f95b5b27176e"
+        "AMI": "ami-02604b2738f3cbf7c"
     },
     "ca-west-1": {
-        "AMI": "ami-0eb8d7497ad86140a"
+        "AMI": "ami-029c110b46e9d2973"
     },
     "eu-central-1": {
-        "AMI": "ami-0d55a45fdefc6cdc6"
+        "AMI": "ami-0b694420f47da24a1"
     },
     "eu-central-2": {
-        "AMI": "ami-012f8c4116f802f98"
+        "AMI": "ami-0b8e14dc3cb10d99d"
     },
     "eu-north-1": {
-        "AMI": "ami-0eb2e9db873545551"
+        "AMI": "ami-059a407f49f5a8ba1"
     },
     "eu-south-1": {
-        "AMI": "ami-02aac05fc4d689729"
+        "AMI": "ami-0b06017c14237b0da"
     },
     "eu-south-2": {
-        "AMI": "ami-0a7bba5acf6fb2a13"
+        "AMI": "ami-0e4dba2d0d7835d41"
     },
     "eu-west-1": {
-        "AMI": "ami-08f8eaba113e7968e"
+        "AMI": "ami-0e314346eaf246be3"
     },
     "eu-west-2": {
-        "AMI": "ami-0765e0d00571193d4"
+        "AMI": "ami-0f66e3ffc117543d9"
     },
     "eu-west-3": {
-        "AMI": "ami-024bca1191f286f7a"
+        "AMI": "ami-03940c988ac6fc9d9"
     },
     "il-central-1": {
-        "AMI": "ami-09a9c3b3158145fdd"
+        "AMI": "ami-02e1ef4d00f9baec1"
     },
     "mx-central-1": {
-        "AMI": "ami-029849fc435696ca8"
+        "AMI": "ami-0298d869b07e5f5bb"
     },
     "sa-east-1": {
-        "AMI": "ami-0e16c14ffc3f334fa"
+        "AMI": "ami-0529c104e3b3bbbf8"
     },
     "us-east-1": {
-        "AMI": "ami-08cce14972119d7a2"
+        "AMI": "ami-01b18e8f04c649737"
     },
     "us-east-2": {
-        "AMI": "ami-0af8c441e6150bf23"
+        "AMI": "ami-016ec4c619adde3c7"
     },
     "us-west-1": {
-        "AMI": "ami-08ec7116a7457ca99"
+        "AMI": "ami-06351e627e96dc397"
     },
     "us-west-2": {
-        "AMI": "ami-0b0a2866db75d5e13"
+        "AMI": "ami-0d9c28bd1651af97a"
     }
 }
