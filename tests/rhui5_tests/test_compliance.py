@@ -13,7 +13,7 @@ from os.path import basename
 import nose
 from stitches.expect import Expect
 
-from rhui5_tests_lib.cfg import Config, OFFICIAL_REGISTRY
+from rhui5_tests_lib.cfg import Config, OFFICIAL_REGISTRY, STAGE_REGISTRY
 from rhui5_tests_lib.conmgr import ConMgr
 from rhui5_tests_lib.helpers import Helpers
 from rhui5_tests_lib.rhuimanager_cmdline_instance import RHUIManagerCLIInstance
@@ -26,7 +26,7 @@ FETCH_RPMS = "rpm -qa --qf '%{NAME} %{RSAHEADER:pgpsig}\n'"
 RH_KEY_ID = "199e2f91fd431d51"
 GPG_RPM = "gpg-pubkey"
 
-USING_TEST_REGISTRY = Config.get_registry_data(RHUA)[0] != OFFICIAL_REGISTRY
+USING_TEST_REGISTRY = Config.get_registry_data(RHUA)[0] not in (OFFICIAL_REGISTRY, STAGE_REGISTRY)
 
 def setup():
     """announce the beginning of the test run"""

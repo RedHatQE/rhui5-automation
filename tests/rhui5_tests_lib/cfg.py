@@ -15,6 +15,7 @@ CREDS = "/root/test_files/credentials.conf"
 LEGACY_CA_DIR = "/etc/pki/rhui/legacy"
 
 OFFICIAL_REGISTRY = "registry.redhat.io"
+STAGE_REGISTRY = "registry.stage.redhat.io"
 
 class Config():
     """reading from and writing to RHUI configuration files"""
