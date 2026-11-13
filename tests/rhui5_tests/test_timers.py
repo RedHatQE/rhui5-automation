@@ -32,8 +32,8 @@ def test_00_check_timer_files():
     _, stdout, _ = RHUA.exec_command("rhua ls -w1 /usr/lib/systemd/system")
     all_systemd_files = stdout.read().decode().splitlines()
     rhui_timer_re = re.compile(r"^rhui-(.*)\.timer$")
-    rhui_timers = [rhui_timer_re.search(file).group(1) for file in all_systemd_files \
-                   if file.startswith("rhui-") and file.endswith(".timer")]
+    matches = [rhui_timer_re.search(file) for file in all_systemd_files]
+    rhui_timers = [match.group(1) for match in matches if match is not None]
     nose.tools.eq_(rhui_timers, EXPECTED_UNITS)
 
 def test_01_check_timers():
