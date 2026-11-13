@@ -1,6 +1,7 @@
 """Tests of RHUI systemd timers"""
 
 from os.path import basename
+import re
 
 import nose
 
@@ -24,9 +25,19 @@ def setup():
     """announce the beginning of the test run"""
     print(f"*** Running {basename(__file__)}: ***")
 
+def test_00_check_timer_files():
+    """check if the expected units match the timer files on the RHUA"""
+    # if this test fails, either the list of expected units needs updating,
+    # or the timer is missing from rhui-tools
+    _, stdout, _ = RHUA.exec_command("rhua ls -w1 /usr/lib/systemd/system")
+    all_systemd_files = stdout.read().decode().splitlines()
+    rhui_timer_re = re.compile(r"^rhui-(.*)\.timer$")
+    rhui_timers = [rhui_timer_re.search(file).group(1) for file in all_systemd_files \
+                   if file.startswith("rhui-") and file.endswith(".timer")]
+    nose.tools.eq_(rhui_timers, EXPECTED_UNITS)
 
 def test_01_check_timers():
-    """check if all RHUI timers exist"""
+    """check if all RHUI timers are active"""
     active = [Helpers.check_service(RHUA, f"rhui-{unit}.timer", "rhua") for unit in EXPECTED_UNITS]
     name_status_zip = zip(EXPECTED_UNITS, active)
     nose.tools.ok_(all(active), msg=f"error: {list(name_status_zip)}")
