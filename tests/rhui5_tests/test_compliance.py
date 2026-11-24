@@ -17,6 +17,7 @@ from rhui5_tests_lib.cfg import Config, OFFICIAL_REGISTRY, STAGE_REGISTRY
 from rhui5_tests_lib.conmgr import ConMgr
 from rhui5_tests_lib.helpers import Helpers
 from rhui5_tests_lib.rhuimanager_cmdline_instance import RHUIManagerCLIInstance
+from rhui5_tests_lib.util import Util
 
 RHUA = ConMgr.connect()
 CDS = ConMgr.connect(ConMgr.get_cds_hostnames()[0])
@@ -133,11 +134,12 @@ def test_08_pgsql_locale():
     # chech the result only in the end
     nose.tools.eq_(restart_status, 0)
 
-def test_09_cds_slirp4netns():
-    """check if the CDS uses slirp4netns"""
+def test_09_cds_networking():
+    """check if the CDS uses pasta or slirp4netns"""
     if not Helpers.check_service(CDS, "rhui_cds"):
         raise nose.SkipTest("The test CDS is down.")
-    _, stdout, _ = CDS.exec_command("pgrep slirp4netns")
+    what = "slirp4netns" if Util.get_rhel_version(CDS)["major"] < 10 else "pasta"
+    _, stdout, _ = CDS.exec_command(f"pgrep {what}")
     output = stdout.read().decode().strip()
     try:
         int(output)
