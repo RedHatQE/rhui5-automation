@@ -14,7 +14,7 @@
   git:
     repo: https://github.com/RedHatQE/rhui5-automation.git
     dest: /root/rhui5-automation
-    version: "{{ branch | default('main') }}"
+    version: "{{ branch | default(omit) }}"
   tags: tests
 
 - name: install the patch utility
