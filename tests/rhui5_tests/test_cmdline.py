@@ -56,6 +56,7 @@ IMPORT_REPO_FILES = {"good": join(IMPORT_REPO_FILES_DIR, "good_repos.yaml"),
                      "noids": join(IMPORT_REPO_FILES_DIR, "no_repo_ids.yaml"),
                      "badname": join(IMPORT_REPO_FILES_DIR, "bad_name.yaml"),
                      "badids": join(IMPORT_REPO_FILES_DIR, "bad_ids.yaml"),
+                     "dupids": join(IMPORT_REPO_FILES_DIR, "dup_ids.yaml"),
                      "notafile": join(IMPORT_REPO_FILES_DIR, "not_a_file.yaml")}
 
 class TestCLI():
@@ -225,6 +226,13 @@ class TestCLI():
         # test an unrecognized option
         cmd = "rhua rhui-manager repo add_by_repo --repo_ids boo --names Boo"
         Expect.expect_retval(RHUA, cmd, 254)
+        # try using duplicate repo IDs
+        RHUIManagerCLI.repo_add_by_repo(RHUA, [self.product_ids[0],
+                                               self.product_ids[0],
+                                               self.product_ids[1]])
+        # delete these repos
+        for repo in [self.product_ids[0], self.product_ids[1]]:
+            RHUIManagerCLI.repo_delete(RHUA, repo)
 
     def test_13_add_rh_repo_by_product(self):
         '''add a Red Hat repo by its product name'''
@@ -316,6 +324,11 @@ class TestCLI():
         conf_rpm = f"{TMPDIR_HOST}/{CLI_CFG[0]}-{CLI_CFG[1]}/build/RPMS/noarch/" + \
                    f"{CLI_CFG[0]}-{CLI_CFG[1]}-{CLI_CFG[2]}.noarch.rpm"
         Expect.expect_retval(RHUA, f"test -f {conf_rpm}")
+        # test RPM requirements:
+        # must not require yum
+        _, stdout, _ = RHUA.exec_command(f"rpm -qpR {conf_rpm}")
+        output = stdout.read().decode()
+        nose.tools.ok_("yum" not in output, msg=f"requires: {output}")
         # test an unrecognized option
         cmd = "rhua rhui-manager client rpm --wizard"
         Expect.expect_retval(RHUA, cmd, 254)
@@ -665,7 +678,10 @@ class TestCLI():
         nose.tools.eq_(expected_repo_ids, actual_repo_ids)
         # re-adding the repos should produce a bad exit code
         RHUIManagerCLI.repo_add_by_file(RHUA, IMPORT_REPO_FILES["good"], False, "already_added")
+        # try a file with duplicate repo IDs
+        RHUIManagerCLI.repo_add_by_file(RHUA, IMPORT_REPO_FILES["dupids"])
         # clean up
+        actual_repo_ids = RHUIManagerCLI.repo_list(RHUA, True).splitlines()
         for repo in actual_repo_ids:
             RHUIManagerCLI.repo_delete(RHUA, repo)
         RHUIManager.remove_rh_certs(RHUA)
@@ -733,15 +749,23 @@ class TestCLI():
         # first, check if there are any artifacts
         artifacts = Helpers.get_artifacts(RHUA)
         nose.tools.ok_(artifacts)
+        # first use the default protection time and expect fresh orphans to be ignored
+        RHUIManagerCLI.repo_orphan_cleanup(RHUA)
+        Helpers.wait_for_finished_tasks(RHUA)
+        artifacts = Helpers.get_artifacts(RHUA)
+        nose.tools.ok_(artifacts)
         # have some of them removed in batches
-        RHUIManagerCLI.repo_orphan_cleanup(RHUA, batch_size=11, max_batches=2)
+        RHUIManagerCLI.repo_orphan_cleanup(RHUA,
+                                           orphan_protection_time=0,
+                                           batch_size=11,
+                                           max_batches=2)
         Helpers.wait_for_finished_tasks(RHUA)
         # check if there are no errors
         _, stdout, _ = RHUA.exec_command("tail /var/lib/rhui/root/.rhui/rhui.log | grep -i failed")
         tail = stdout.read().decode()
         nose.tools.ok_("ailed" not in tail, msg=tail)
         # remove the rest of the artifacts, all at once (default)
-        RHUIManagerCLI.repo_orphan_cleanup(RHUA)
+        RHUIManagerCLI.repo_orphan_cleanup(RHUA, 0)
         Helpers.wait_for_finished_tasks(RHUA)
         # check if there are none
         artifacts = Helpers.get_artifacts(RHUA)
@@ -830,7 +854,7 @@ class TestCLI():
     def test_55_symlink_cleanup():
         '''check if rhui-manager can have dangling symlinks removed'''
         # first, clean up orphans
-        RHUIManagerCLI.repo_orphan_cleanup(RHUA)
+        RHUIManagerCLI.repo_orphan_cleanup(RHUA, 0)
         Helpers.wait_for_finished_tasks(RHUA)
         # determine current symlinks
         symlinks_before = Helpers.get_symlinks(RHUA)
@@ -853,6 +877,19 @@ class TestCLI():
         random_symlink = random.choice(symlinks_before)
         cmd = f"grep 'Removed dangling symlink.*{random_symlink}' /var/lib/rhui/root/.rhui/rhui.log"
         Expect.expect_retval(RHUA, cmd)
+
+    @staticmethod
+    def test_56_tasks_purge():
+        '''check if rhui-manager can have old Pulp tasks removed'''
+        # get a list of old tasks
+        completed_tasks = PulpAPI.list_tasks(RHUA, ["completed"])
+        nose.tools.ok_(len(completed_tasks) > 1, msg="not enough completed tasks to test")
+        RHUIManagerCLI.repo_tasks_purge(RHUA, 0)
+        # wait until the purge is done and then refresh the list of old tasks
+        Helpers.wait_for_finished_tasks(RHUA)
+        completed_tasks = PulpAPI.list_tasks(RHUA, ["completed"])
+        # only a single completed task should remain - the purge itself
+        nose.tools.eq_(len(completed_tasks), 1)
 
     @staticmethod
     def test_99_cleanup():

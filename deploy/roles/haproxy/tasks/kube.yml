@@ -32,7 +32,7 @@
         src: /etc/rhsm/ca/redhat-uep.pem
         dest: "/home/{{ ansible_facts['env']['SUDO_USER'] }}/.minikube/certs"
         remote_src: True
-    when: registry['insecure'] | default(False) | bool
+    when: registry['insecure'] is truthy
     become: False
 
   - name: start minikube

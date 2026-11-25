@@ -7,7 +7,7 @@ import logging
 import nose
 from stitches.expect import Expect
 
-from rhui5_tests_lib.cfg import RHUI_ROOT
+from rhui5_tests_lib.cfg import Config, RHUI_ROOT
 from rhui5_tests_lib.conmgr import ConMgr
 from rhui5_tests_lib.helpers import Helpers
 from rhui5_tests_lib.rhuimanager_cmdline_instance import RHUIManagerCLIInstance
@@ -112,11 +112,22 @@ def test_07_reinstall_all():
     # check if the CDS container was restarted after the reinstallation
     for cds_conn in CDS:
         Expect.expect_retval(cds_conn, check_cmd)
+    # check if the CDS image tag matches the RHUI version (IOW, is pinned)
+    actual_rhui_version = Config.get_rhui_version(RHUA)
+    cds_data = Config.get_instance_data(RHUA, "cds", CDS_HOSTNAMES[0])
+    saved_image_name = cds_data["container_image"]
+    saved_image_id = saved_image_name.split(":")
+    saved_image_tag = saved_image_id[1]
+    nose.tools.eq_(saved_image_tag, actual_rhui_version)
 
 def test_08_readd_cds_noforce():
     '''
     check if rhui refuses to add a CDS again if no extra parameter is used
     '''
+    # do not run if using a non-default (scratch) CDS image)
+    registry_data = Config.get_registry_data(RHUA)
+    if registry_data[5]:
+        raise nose.exc.SkipTest("This test can't run with a non-default image.")
     # again choose a random CDS hostname from the list
     cds = random.choice(CDS_HOSTNAMES)
     status = RHUIManagerCLIInstance.add(RHUA, "cds", cds, unsafe=True)

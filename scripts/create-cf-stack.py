@@ -72,6 +72,15 @@ args = argparser.parse_args()
 
 fs_type = "rhua"
 
+if args.cli_only:
+    args.launchpad_os = args.cds = args.haproxy = 0
+    fs_type = ""
+    args.small = True
+
+instance_types = {"arm64": "t4g.medium" if args.small else "t4g.large",
+                  "x86_64": "t3.small" if args.small else "m5.large"}
+kube_instance_type = "t2.2xlarge"
+
 if args.debug:
     loglevel = logging.DEBUG
 else:
@@ -86,11 +95,6 @@ if args.cli_all:
     args.cli8 = args.cli8 or -1
     args.cli9 = args.cli9 or -1
     args.cli10 = args.cli10 or -1
-
-if args.cli_only:
-    args.launchpad_os = args.cds = args.haproxy = 0
-    fs_type = ""
-    args.small = True
 
 if args.boxed:
     args.cds = args.haproxy = 0
@@ -133,10 +137,6 @@ json_dict['AWSTemplateFormatVersion'] = '2010-09-09'
 if args.nfs:
     fs_type = "nfs"
 
-instance_types = {"arm64": "t4g.medium" if args.small else "t4g.large",
-                  "x86_64": "t3.small" if args.small else "m5.large"}
-kube_instance_type = "t2.2xlarge"
-
 if args.kube:
     args.cds = 0
 
@@ -153,7 +153,16 @@ if args.cli10 == -1:
     args.cli10 = len(instance_types)
     args.cli10_arch = ",".join(instance_types.keys())
 
-json_dict['Description'] = "Client-only stack" if args.cli_only else "RHUI-in-a-box" if args.boxed else f"RHUI with {args.cds} CDS and {args.haproxy} HAProxy nodes"
+if args.cli_only:
+    json_dict['Description'] = "Client-only stack"
+else:
+    if args.boxed:
+        json_dict['Description'] = "RHUI-in-a-box"
+    else:
+        if args.kube:
+            json_dict['Description'] = "RHUI in K8s"
+        else:
+            json_dict['Description'] = f"RHUI with {args.cds} CDS and {args.haproxy} HAProxy nodes"
 if args.cli7 > 0:
     json_dict['Description'] += f", {args.cli7} RHEL7 client" + ("s" if args.cli7 > 1 else "")
 if args.cli8 > 0:

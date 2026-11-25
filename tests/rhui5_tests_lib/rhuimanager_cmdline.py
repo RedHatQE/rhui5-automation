@@ -403,7 +403,7 @@ class RHUIManagerCLI():
 
     @staticmethod
     def repo_orphan_cleanup(connection,
-                            orphan_protection_time=0,
+                            orphan_protection_time=-1,
                             batch_size=0,
                             max_batches=0,
                             dry_run=False):
@@ -411,7 +411,7 @@ class RHUIManagerCLI():
         schedule tasks to clean up orphaned artifacts
         '''
         cmd = "rhua rhui-manager repo orphan_cleanup"
-        if orphan_protection_time:
+        if orphan_protection_time >= 0:
             cmd += f" --orphan_protection_time={orphan_protection_time}"
         if batch_size:
             cmd += f" --batch_size={batch_size}"
@@ -452,6 +452,16 @@ class RHUIManagerCLI():
         if min_age is not None:
             cmd += f" --min_age {min_age}"
         Expect.expect_retval(connection, cmd, 254 if expect_trouble else 0)
+
+    @staticmethod
+    def repo_tasks_purge(connection, older_than_days=None):
+        '''
+        clean up Pulp's old tasks
+        '''
+        cmd = "rhua rhui-manager repo tasks_purge"
+        if older_than_days is not None:
+            cmd += f" --older_than_days {older_than_days}"
+        Expect.expect_retval(connection, cmd)
 
     @staticmethod
     def packages_list(connection, repo_id):
@@ -600,6 +610,54 @@ class RHUIManagerCLI():
         if "no valid entitlements provided" in response:
             raise NoValidEntitlementsProvided()
         raise RuntimeError("Execution failed" + response)
+
+    @staticmethod
+    def client_revoke(connection, cert=None, serial=None, comment=None, force=False):
+        '''
+        revoke an entitlement certificate by its path or serial number
+        '''
+        cmd = "rhua rhui-manager client revoke"
+        if cert:
+            cmd += f" --cert {cert}"
+        if serial:
+            cmd += f" --serial {serial}"
+        if comment:
+            cmd += f" --comment '{comment}'"
+        if force:
+            cmd += " --force"
+        Expect.expect_retval(connection, cmd)
+
+    @staticmethod
+    def client_unrevoke(connection, cert=None, serial=None):
+        '''
+        unrevoke an entitlement certificate by its path or serial number
+        '''
+        cmd = "rhua rhui-manager client unrevoke"
+        if cert:
+            cmd += f" --cert {cert}"
+        if serial:
+            cmd += f" --serial {serial}"
+        Expect.expect_retval(connection, cmd)
+
+    @staticmethod
+    def client_revoked(connection):
+        '''
+        list revoked certificates; returns a nested list
+        '''
+        cmd = "rhua rhui-manager client revoked"
+        _, stdout, _ = connection.exec_command(cmd)
+        lines = stdout.read().decode().splitlines()
+        return [line.split(maxsplit=2) for line in lines[1:]]
+
+    @staticmethod
+    def proxy_update(connection, force=False):
+        '''
+        propagate proxy settings from rhui-tools.conf to all repository remotes
+        '''
+        cmd = "rhua rhui-manager proxy update"
+        if force:
+            cmd += " --force"
+        Expect.expect_retval(connection, cmd)
 
     @staticmethod
     def logout(connection):

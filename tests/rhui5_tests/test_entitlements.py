@@ -232,6 +232,9 @@ class TestEntitlement():
         '''
            check for appropriate error messages when the entitlement cert contains no RHUI repos
         '''
+        cert = "`ls /var/lib/rhui/root/test_files/no_rhui_repo_cert/* | grep -v key`"
+        if Util.cert_expired(RHUA, cert):
+            raise nose.exc.SkipTest("The given certificate has already expired.")
         # copy the cert and key to the entitlement directory on the RHUA host
         RHSMRHUI.copy_entitlement(RHUA, "no_rhui_repo_cert")
         # run the sync script, expect a proper exit code

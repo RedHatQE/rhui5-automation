@@ -3,6 +3,7 @@
 import csv
 import logging
 from os.path import basename
+import re
 import subprocess
 import time
 
@@ -133,6 +134,19 @@ def test_08_rhua_443_access():
     for path in paths:
         response = requests.head(f"https://{HOSTNAMES['RHUA']}{path}", timeout=10, verify=False)
         nose.tools.eq_(response.status_code, 403)
+
+def test_09_cds_server_tokens():
+    """check if the web server version isn't exposed"""
+    response = requests.head(f"https://{HOSTNAMES['CDS']}/", timeout=10, verify=False)
+    server_signature = response.headers["Server"]
+    # simple test: the version is normally presented after a slash
+    nose.tools.ok_("/" not in server_signature, msg=f"got: {server_signature}")
+    # more sophisticated test: get the version and make sure it's not in the response
+    # note: the version string is sent to the stderr
+    _, _, stderr = CDS.exec_command("cds nginx -v")
+    nginx_v_raw = stderr.read().decode().strip()
+    nginx_v = re.sub("[a-z :/]*", "", nginx_v_raw)
+    nose.tools.ok_(nginx_v not in server_signature, msg=f"got: {server_signature}")
 
 def test_99_cleanup():
     """delete CDS and HAProxy nodes"""

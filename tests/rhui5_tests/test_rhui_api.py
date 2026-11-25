@@ -6,8 +6,8 @@
 # in your shell before running this script.
 # The cleanup will be skipped, too, so you ought to clean up eventually.
 
-from os import getenv
-from os.path import basename
+from os import getenv, remove
+from os.path import basename, exists
 import time
 
 from configparser import ConfigParser
@@ -17,7 +17,7 @@ import nose
 from stitches.expect import Expect
 import yaml
 
-from rhui5_tests_lib.cfg import Config, RHUI_CFG_HOST_BAK_DIR, RHUI_CFG_BAK
+from rhui5_tests_lib.cfg import Config
 from rhui5_tests_lib.conmgr import ConMgr
 from rhui5_tests_lib.installer import RHUIInstaller
 from rhui5_tests_lib.rhuimanager import RHUIManager
@@ -30,6 +30,10 @@ from rhui5_tests_lib.yummy import Yummy
 logging.basicConfig(level=logging.DEBUG)
 
 RHUA = ConMgr.connect()
+
+CDS_HOSTNAMES = ConMgr.get_cds_hostnames()
+HA_HOSTNAME = ConMgr.get_lb_hostname()
+
 # __reusable_clients_with_cds
 # To make this script communicate with a client machine different from cli01.example.com, run:
 # export RHUICLI=hostname
@@ -55,6 +59,7 @@ UPLOAD_RPM_2_NAME_VR = ["rhui-rpm-upload-trial", "1-1"]
 UPLOAD_RPM_3 = "rhui-rpm-upload-tryout"
 DOWNDIR = "/tmp/test-api-dir"
 TEST_PKG_RESERVED = "compat-sap-c++-10"
+SIGNAL_FILE = "/tmp/needs_reinstalling"
 
 class TestRhuiApi():
     """class for RHUI API tests"""
@@ -65,12 +70,19 @@ class TestRhuiApi():
         with open("/etc/rhui5_tests/tested_repos.yaml", encoding="utf-8") as configfile:
             doc = yaml.safe_load(configfile)
             try:
-                self.rh_repo_id = doc["yum_repos"][self.version][arch]["id"]
-                self.rh_repo_label = doc["yum_repos"][self.version][arch]["label"]
-                self.rh_repo_path = doc["yum_repos"][self.version][arch]["path"]
+                self.rh_repo = {
+                                "id": doc["yum_repos"][self.version][arch]["id"],
+                                "name": doc["yum_repos"][self.version][arch]["name"],
+                                "version": doc["yum_repos"][self.version][arch]["version"],
+                                "label": doc["yum_repos"][self.version][arch]["label"],
+                                "path": doc["yum_repos"][self.version][arch]["path"]
+                               }
                 self.test_package = doc["yum_repos"][self.version][arch]["test_package"]
                 self.product_name = doc["product"]["name"]
                 self.product_ids = doc["product"]["ids"]
+                self.dup_ids = [doc["sync_policy_repos"][10]["debug"],
+                                doc["sync_policy_repos"][10]["debug"],
+                                doc["sync_policy_repos"][10]["source"]]
             except KeyError:
                 raise nose.SkipTest(f"No test repo defined for RHEL {self.version} on {arch}") \
                 from None
@@ -83,16 +95,25 @@ class TestRhuiApi():
     @staticmethod
     def test_00_init():
         """initialize the environment"""
+        # use the on-demand sync policy; no need to wait until all the packages are synced
+        Config.set_sync_policy(RHUA, "on_demand")
+        # use a longer session length - the default may be too short for this test case
+        Config.set_rhui_tools_conf(RHUA, "api", "session_length", "1200", False)
+        # if the API isn't enabled, apply the new session length, else rerun the installer
         enabled = Config.get_from_rhui_tools_conf(RHUA, "api", "restapi_support_enabled")
         if enabled != "True":
-            Config.set_rhui_tools_conf(RHUA, "api", "restapi_support_enabled", "True")
-            Config.set_rhui_tools_conf(RHUA, "api", "session_length", "1200", False)
+            Config.set_rhui_tools_conf(RHUA, "api", "restapi_support_enabled", "True", False)
             RHUIInstaller.rerun()
             time.sleep(30)
+            with open(SIGNAL_FILE, "w", encoding="utf-8"):
+                pass
+        else:
+            Expect.expect_retval(RHUA, "rhua systemctl restart rhui-api")
         if not getenv("RHUISKIPSETUP"):
             RHUIManager.initial_run(RHUA)
-            RHUIManagerCLIInstance.add(RHUA, "cds", unsafe=True)
             RHUIManagerCLIInstance.add(RHUA, "haproxy", unsafe=True)
+            for cds in CDS_HOSTNAMES:
+                RHUIManagerCLIInstance.add(RHUA, "cds", cds, unsafe=True)
             RHUIManagerCLI.cert_upload(RHUA)
         RHUIAPI.get_ca_cert(RHUA)
         RHUIAPI.get_cookie(RHUA)
@@ -123,7 +144,7 @@ class TestRhuiApi():
         RHUIAPI.repo_create_custom(CUSTOM_REPO_UN,
                                    gpg_public_keys=[f"{CUSTOM_RPMS_DIR}/{KEY_FILENAME}"])
         # a Red Hat repo by its ID, sync it at the same time
-        RHUIAPI.repo_add([self.rh_repo_id], sync_now=True)
+        RHUIAPI.repo_add([self.rh_repo["id"]], sync_now=True)
         # Red Hat repos by their product name
         RHUIAPI.repo_add(product_names=[self.product_name])
         # check the packages in the first product repo -
@@ -133,6 +154,14 @@ class TestRhuiApi():
         response_lines = [json.loads(line) for line in api_response.splitlines()]
         nose.tools.ok_("error" not in response_lines[0],
                        msg=f"response: {response_lines}")
+        # add duplicate repos, should be handled well
+        api_response = RHUIAPI.repo_add(self.dup_ids)
+        response_lines = [json.loads(line) for line in api_response.splitlines()]
+        skipped = [line for line in response_lines if line["type"] == "skipped"][0]
+        nose.tools.eq_(skipped["repo_id"], self.dup_ids[1])
+        nose.tools.eq_(skipped["reason"], "duplicate")
+        done = [line for line in response_lines if line["type"] == "done"][0]
+        nose.tools.eq_(done["created_count"], len(set(self.dup_ids)))
 
     def test_03_list_repos(self):
         """list repos and check if they're all present"""
@@ -142,20 +171,23 @@ class TestRhuiApi():
         except json.decoder.JSONDecodeError as err:
             raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
         # check the number of repos (two custom, one added by its ID and several by the product)
-        nose.tools.eq_(len(repo_list_dict["repositories"]), 3 + len(self.product_ids))
+        # plus the deduplicated repos
+        nose.tools.eq_(len(repo_list_dict["repositories"]),
+                       3 + len(self.product_ids) + len(set(self.dup_ids)))
         try:
             actual_repos = [repo["id"] for repo in repo_list_dict["repositories"]]
         except KeyError as err:
             raise RuntimeError(f"response: {api_response}") from err
-        expected_repos = [CUSTOM_REPO, CUSTOM_REPO_UN, self.rh_repo_id] + self.product_ids
+        expected_repos = [CUSTOM_REPO, CUSTOM_REPO_UN, self.rh_repo["id"]] + self.product_ids + \
+                         list(set(self.dup_ids))
         nose.tools.eq_(sorted(actual_repos), sorted(expected_repos))
 
     def test_04_repo_info(self):
         """get repository details and check them"""
         # check the two custom repos and the main RH repo, one by one
-        for repo in CUSTOM_REPO, CUSTOM_REPO_UN, self.rh_repo_id:
+        for repo in CUSTOM_REPO, CUSTOM_REPO_UN, self.rh_repo["id"]:
             # also get sync info in the case of the RH repo
-            api_response = RHUIAPI.repo_info(repo, repo == self.rh_repo_id)
+            api_response = RHUIAPI.repo_info(repo, repo == self.rh_repo["id"])
             try:
                 repo_info_dict = json.loads(api_response)
             except json.decoder.JSONDecodeError as err:
@@ -173,7 +205,7 @@ class TestRhuiApi():
                 nose.tools.ok_(repo_info_dict["gpg_key"],
                                msg="No GPG key is configured for the repo.")
             else:
-                nose.tools.eq_(repo_info_dict["pulp_labels"]["base_path"], self.rh_repo_path)
+                nose.tools.eq_(repo_info_dict["pulp_labels"]["base_path"], self.rh_repo["path"])
                 nose.tools.ok_("last_sync_date" in repo_info_dict,
                                msg=f"repo info: {repo_info_dict}")
 
@@ -213,8 +245,8 @@ class TestRhuiApi():
             sync_tasks = [line for line in response_lines if line["type"] == "scheduled"]
         except KeyError as err:
             raise RuntimeError(f"response: {api_response}") from err
-        # expect as many tasks as there are repos in the product plus the base RH repo
-        nose.tools.eq_(len(sync_tasks), len(self.product_ids) + 1)
+        # expect as many tasks as there are repos in the product plus dupes plus the base RH repo
+        nose.tools.eq_(len(sync_tasks), len(self.product_ids) + len(set(self.dup_ids)) + 1)
         time.sleep(5)
         # wait until there are no waiting tasks
         while json.loads(RHUIAPI.tasks_waiting())["tasks"]:
@@ -250,14 +282,14 @@ class TestRhuiApi():
         # check the repos that remained
         api_response = RHUIAPI.repo_list(True)
         repo_list_dict = json.loads(api_response)
-        nose.tools.eq_(len(repo_list_dict["repositories"]), 3)
+        nose.tools.eq_(len(repo_list_dict["repositories"]), 5)
         # check if sync information is in the response
         nose.tools.ok_(all("last_sync_date" in info for info in repo_list_dict["repositories"]),
                        msg=f"repo list: {repo_list_dict}")
 
     def test_08_list_packages(self):
         """list packages in the Red Hat repo and check for a test package"""
-        api_response = RHUIAPI.packages_list(self.rh_repo_id)
+        api_response = RHUIAPI.packages_list(self.rh_repo["id"])
         try:
             response_lines = [json.loads(line) for line in api_response.splitlines()]
         except json.decoder.JSONDecodeError as err:
@@ -348,6 +380,9 @@ class TestRhuiApi():
         """generate K8s configuration and check it"""
         secret = "testsecret"
         expected_kinds = ["ConfigMap", "Deployment", "Secret", "Service"]
+        image_name = "rhui5/cds-kubernetes-rhel9"
+        registry = Config.get_registry_data(RHUA)[0]
+        actual_rhui_version = Config.get_rhui_version(RHUA)
         api_response = RHUIAPI.cds_k8s(secret)
         # try one more time if there's an issue
         if "curl:" in api_response:
@@ -367,6 +402,18 @@ class TestRhuiApi():
         k8s_yaml = yaml.safe_load_all(k8s_dict["manifest"])
         data = list(k8s_yaml)
         nose.tools.eq_(sorted([item["kind"] for item in data]), expected_kinds)
+        # check version pinning
+        deployment = [i for i in data if i["kind"] == "Deployment"][0]
+        nose.tools.eq_(deployment["spec"]["template"]["spec"]["containers"][0]["image"],
+                       f"{registry}/{image_name}:{actual_rhui_version}")
+        # check using a custom CDS K8s image
+        api_response = RHUIAPI.cds_k8s(secret, f"{image_name}:test")
+        k8s_dict_ti = json.loads(api_response)
+        k8s_yaml_ti = yaml.safe_load_all(k8s_dict_ti["manifest"])
+        data_ti = list(k8s_yaml_ti)
+        deployment = [i for i in data_ti if i["kind"] == "Deployment"][0]
+        nose.tools.eq_(deployment["spec"]["template"]["spec"]["containers"][0]["image"],
+                       f"{registry}/{image_name}:test")
 
     def test_12_labels(self):
         """list repo labels"""
@@ -380,12 +427,12 @@ class TestRhuiApi():
         except KeyError as err:
             raise RuntimeError(f"response: {api_response}") from err
         # check if the test repo labels is present
-        nose.tools.ok_(self.rh_repo_label in label_list,
+        nose.tools.ok_(self.rh_repo["label"] in label_list,
                        msg=f"labels: {label_list}")
 
     def test_13_generate_ent_cert(self):
         """generate an entitlement certificate"""
-        api_response = RHUIAPI.client_cert([CUSTOM_REPO, self.rh_repo_label],
+        api_response = RHUIAPI.client_cert([CUSTOM_REPO, self.rh_repo["label"]],
                                            ENT,
                                            35*365,
                                            ENT_DIR)
@@ -430,7 +477,7 @@ class TestRhuiApi():
         proxy = "_none_"
         api_response = RHUIAPI.client_rpm(ENT_DIR,
                                           RPM,
-                                          [self.rh_repo_label],
+                                          [self.rh_repo["label"]],
                                           [CUSTOM_REPO_UN],
                                           "",
                                           "",
@@ -450,7 +497,7 @@ class TestRhuiApi():
         _, stdout, _ = RHUA.exec_command(f"cat {repo_file}")
         yum_cfg = ConfigParser()
         yum_cfg.read_file(stdout)
-        rh_section = f"rhui-{self.rh_repo_label}"
+        rh_section = f"rhui-{self.rh_repo['label']}"
         unprot_section = f"rhui-custom-{CUSTOM_REPO_UN}"
         nose.tools.ok_(rh_section in yum_cfg.sections(), msg=f"sections: {yum_cfg.sections()}")
         nose.tools.ok_(unprot_section in yum_cfg.sections(), msg=f"sections: {yum_cfg.sections()}")
@@ -472,12 +519,173 @@ class TestRhuiApi():
 
     def test_16_inst_rpm_custom_repo(self):
         """check if RPMs can be fetched from the custom and the Red Hat repos"""
+        # first of all, make sure the repos are exported - for this test and also for the next one
+        for repo in [self.rh_repo["id"], CUSTOM_REPO, CUSTOM_REPO_UN]:
+            RHUIManagerCLI.repo_export(RHUA, repo)
+            time.sleep(2)
         Yummy.install(CLI, [UPLOAD_RPM_3], False)
         Yummy.download(CLI, [self.test_package], DOWNDIR)
 
+    def test_17_repo_status(self):
+        """check repo status"""
+        api_response = RHUIAPI.status_repos()
+        try:
+            status_dict = json.loads(api_response)
+        except json.decoder.JSONDecodeError as err:
+            raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
+        try:
+            status_list = status_dict["repos"]
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
+        # check if the test repos are present in the status report
+
+        # custom protected repo
+        matched_cus_prot_repo_status = [st for st in status_list if st["id"] == CUSTOM_REPO]
+        # expect one match
+        nose.tools.eq_(len(matched_cus_prot_repo_status), 1)
+        # check the data
+        repo_status = matched_cus_prot_repo_status[0]
+        nose.tools.eq_(repo_status["name"], CUSTOM_REPO)
+        nose.tools.eq_(repo_status["base_path"], f"protected/{CUSTOM_REPO}")
+        nose.tools.eq_(repo_status["description"], CR_DISPLAY_NAME)
+        nose.tools.eq_(repo_status["group"], "custom")
+        nose.tools.eq_(repo_status["repo_type"], "rpm")
+        nose.tools.ok_(repo_status["repo_available"])
+        nose.tools.ok_(repo_status["repo_published"])
+        nose.tools.ok_(repo_status["metadata_available"])
+
+        # custom unprotected repo
+        matched_cus_unprot_repo_status = [st for st in status_list if st["id"] == CUSTOM_REPO_UN]
+        # expect one match
+        nose.tools.eq_(len(matched_cus_unprot_repo_status), 1)
+        # check the data
+        repo_status = matched_cus_unprot_repo_status[0]
+        nose.tools.eq_(repo_status["name"], CUSTOM_REPO_UN)
+        nose.tools.eq_(repo_status["base_path"], f"unprotected/{CUSTOM_REPO_UN}")
+        nose.tools.eq_(repo_status["description"], CUSTOM_REPO_UN)
+        nose.tools.eq_(repo_status["group"], "custom")
+        nose.tools.eq_(repo_status["repo_type"], "rpm")
+        nose.tools.ok_(repo_status["repo_available"])
+        nose.tools.ok_(repo_status["repo_published"])
+        nose.tools.ok_(repo_status["metadata_available"])
+
+        # RH repo
+        matched_rh_repo_status = [st for st in status_list if st["id"] == self.rh_repo["id"]]
+        # expect one match
+        nose.tools.eq_(len(matched_rh_repo_status), 1)
+        # check the data
+        repo_status = matched_rh_repo_status[0]
+        nose.tools.eq_(repo_status["name"], self.rh_repo["id"])
+        nose.tools.eq_(repo_status["description"],
+                       Util.format_repo(self.rh_repo["name"], self.rh_repo["version"]))
+        nose.tools.eq_(repo_status["base_path"], self.rh_repo["path"])
+        nose.tools.eq_(repo_status["group"], "redhat")
+        nose.tools.eq_(repo_status["repo_type"], "rpm")
+        nose.tools.ok_(repo_status["repo_available"])
+        nose.tools.ok_(repo_status["repo_published"])
+        nose.tools.ok_(repo_status["metadata_available"])
+        nose.tools.eq_(repo_status["last_sync_result"], "completed")
+        nose.tools.eq_(repo_status["last_sync_exception"], None)
+        nose.tools.eq_(repo_status["last_sync_traceback"], None)
+        nose.tools.ok_(repo_status["last_sync_start"])
+        nose.tools.ok_(repo_status["last_sync_end"])
+        nose.tools.ok_(repo_status["last_sync_duration"])
+        nose.tools.ok_(repo_status["next_sync_date"])
+
+    @staticmethod
+    def test_18_rhua_status():
+        """check RHUA status"""
+        api_response = RHUIAPI.status_rhua()
+        try:
+            status_dict = json.loads(api_response)
+        except json.decoder.JSONDecodeError as err:
+            raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
+        # check the services
+        try:
+            status_list = status_dict["services"]
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
+        # are they all up?
+        nose.tools.ok_(all(svc["active"] for svc in status_list), msg=f"got: {status_list}")
+        # are they all active?
+        nose.tools.ok_(all(svc["active_state"] == "active" for svc in status_list))
+        # are all the services checked?
+        services = [svc["name"] for svc in status_list]
+        for svc in ["nginx", "postgresql", "pulpcore-api", "pulpcore-content"]:
+            nose.tools.ok_(svc + ".service" in services)
+        # are all the workers checked?
+        workers_api = [svc for svc in status_list if svc["name"].startswith("pulpcore-worker")]
+        worker_count_api = len(workers_api)
+        worker_count_cfg = int(Config.get_from_rhui_tools_conf(RHUA, "answers", "pulp_workers"))
+        nose.tools.eq_(worker_count_api, worker_count_cfg)
+
+        # check the entitlement cert
+        ent_ca_crt_dict = status_dict["entitlement_ca"]
+        nose.tools.ok_(not ent_ca_crt_dict["expired"], msg="got: {ent_ca_crt_dict}")
+
+        # check the Pulp SSL cert
+        ent_ca_crt_dict = status_dict["pulp_ssl"]
+        nose.tools.ok_(not ent_ca_crt_dict["expired"], msg="got: {ent_ca_crt_dict}")
+
+    @staticmethod
+    def test_19_cds_status():
+        """check CDS status"""
+        api_response = RHUIAPI.status_cds()
+        try:
+            status_dict = json.loads(api_response)
+        except json.decoder.JSONDecodeError as err:
+            raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
+        # check the services
+        try:
+            status_list = status_dict["nodes"]
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
+        # are all the CDS nodes in the status report?
+        nose.tools.eq_(len(status_list), len(CDS_HOSTNAMES))
+        nose.tools.eq_(sorted([host["hostname"] for host in status_list]), sorted(CDS_HOSTNAMES))
+        # are all the services an all the CDS nodes up?
+        cds_services = ["gunicorn-auth", "gunicorn-content_manager", "gunicorn-mirror", "nginx"]
+        for host in status_list:
+            reported_services = sorted([svc["name"] for svc in host["services"]])
+            nose.tools.eq_(reported_services, [svc + ".service" for svc in cds_services])
+
+        for host in status_list:
+            nose.tools.ok_(all(svc["active"] for svc in host["services"]),
+                           msg=f"got: {status_list}")
+
+        for host in status_list:
+            nose.tools.ok_(all(svc["active_state"] == "active" for svc in host["services"]),
+                           msg=f"got: {status_list}")
+
+        # check the SSL cert
+        nose.tools.ok_(not any(host["ssl_certificate"]["expired"] for host in status_list))
+
+    @staticmethod
+    def test_20_haproxy_status():
+        """check HAPROXY status"""
+        api_response = RHUIAPI.status_haproxy()
+        try:
+            status_dict = json.loads(api_response)
+        except json.decoder.JSONDecodeError as err:
+            raise RuntimeError(f"error: {err}, API response: '{api_response}'") from err
+        try:
+            status_list = status_dict["nodes"]
+        except KeyError as err:
+            raise RuntimeError(f"response: {api_response}") from err
+        # using only one LB
+        status = status_list[0]
+        # is the HAProxy node in the status report?
+        nose.tools.eq_(status["hostname"], HA_HOSTNAME)
+        # is the haproxy service on the HAProxy node, and is it up and active?
+        service = status["services"][0]
+        nose.tools.eq_(service["name"], "haproxy.service")
+        nose.tools.ok_(service["active"])
+        nose.tools.eq_(service["active_state"], "active")
+
     def test_99_cleanup(self):
         """clean up"""
-        RHUIAPI.repo_delete([self.rh_repo_id, CUSTOM_REPO, CUSTOM_REPO_UN])
+        RHUIAPI.repo_delete([self.rh_repo["id"], CUSTOM_REPO, CUSTOM_REPO_UN] + \
+                            list(set(self.dup_ids)))
         Expect.expect_retval(RHUA, f"rm -f {ENT_DIR_HOST}/{ENT}*")
         Expect.expect_retval(RHUA, f"rm -rf {ENT_DIR_HOST}/{RPM}*")
         Expect.expect_retval(CLI, f"rm -rf {DOWNDIR}")
@@ -487,10 +695,11 @@ class TestRhuiApi():
             RHUIManagerCLIInstance.delete(RHUA, "cds", force=True)
             ConMgr.remove_ssh_keys(RHUA)
             RHUIManager.remove_rh_certs(RHUA)
-        if RHUA.recv_exit_status(f"test -f {RHUI_CFG_HOST_BAK_DIR}/{RHUI_CFG_BAK}") == 0:
-            Config.restore_rhui_tools_conf(RHUA)
+        Config.restore_rhui_tools_conf(RHUA)
+        if exists(SIGNAL_FILE):
             RHUIInstaller.rerun()
             time.sleep(30)
+            remove(SIGNAL_FILE)
         RHUIAPI.del_cookie()
 
     @staticmethod

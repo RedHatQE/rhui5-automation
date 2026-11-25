@@ -218,7 +218,7 @@ class TestUpdateInfo():
         RHUIManagerRepo.delete_all_repos(RHUA)
         Expect.expect_retval(RHUA, f"rm -rf {TMPDIR_HOST}")
         # delete the errata from Pulp
-        RHUIManagerCLI.repo_orphan_cleanup(RHUA)
+        RHUIManagerCLI.repo_orphan_cleanup(RHUA, 0)
         if not getenv("RHUISKIPSETUP"):
             RHUIManagerInstance.delete_all(RHUA, "loadbalancers")
             RHUIManagerInstance.delete_all(RHUA, "cds")

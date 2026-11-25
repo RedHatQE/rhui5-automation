@@ -13,9 +13,11 @@ from os.path import basename
 import nose
 from stitches.expect import Expect
 
-from rhui5_tests_lib.cfg import Config, OFFICIAL_REGISTRY
+from rhui5_tests_lib.cfg import Config, OFFICIAL_REGISTRY, STAGE_REGISTRY
 from rhui5_tests_lib.conmgr import ConMgr
+from rhui5_tests_lib.helpers import Helpers
 from rhui5_tests_lib.rhuimanager_cmdline_instance import RHUIManagerCLIInstance
+from rhui5_tests_lib.util import Util
 
 RHUA = ConMgr.connect()
 CDS = ConMgr.connect(ConMgr.get_cds_hostnames()[0])
@@ -25,7 +27,7 @@ FETCH_RPMS = "rpm -qa --qf '%{NAME} %{RSAHEADER:pgpsig}\n'"
 RH_KEY_ID = "199e2f91fd431d51"
 GPG_RPM = "gpg-pubkey"
 
-USING_TEST_REGISTRY = Config.get_registry_data(RHUA)[0] != OFFICIAL_REGISTRY
+USING_TEST_REGISTRY = Config.get_registry_data(RHUA)[0] not in (OFFICIAL_REGISTRY, STAGE_REGISTRY)
 
 def setup():
     """announce the beginning of the test run"""
@@ -94,13 +96,29 @@ def test_06_wanted_rpms():
     Expect.expect_retval(RHUA, "rhua rpm -q rpm-sign && rhua rpmsign --version")
     Expect.expect_retval(RHUA, "rhua rpm -q glibc-all-langpacks")
     # also check RPMs on CDS & HAProxy nodes, but only if they're configured
-    if CDS.recv_exit_status("systemctl status rhui_cds") == 0:
+    cds_exists = Helpers.check_service(CDS, "rhui_cds")
+    haproxy_exists = Helpers.check_service(HAPROXY, "rhui_haproxy")
+    if cds_exists:
         Expect.expect_retval(CDS, "cds rpm -q logrotate && "
                                   "cds systemctl status logrotate.timer | grep Trigger:")
+    if haproxy_exists:
         Expect.expect_retval(HAPROXY, "ha rpm -q logrotate && "
                                       "ha systemctl status logrotate.timer | grep Trigger:")
 
-def test_07_pgsql_locale():
+def test_07_unwanted_rpms():
+    """check for extra RPMs in the containers that CCSPs wished to avoid"""
+    unwanted_rpms = ["gdb-gdbserver"]
+    cds_exists = Helpers.check_service(CDS, "rhui_cds")
+    haproxy_exists = Helpers.check_service(HAPROXY, "rhui_haproxy")
+    for rpm in unwanted_rpms:
+        Expect.expect_retval(RHUA, f"rhua rpm -q {rpm}", 1)
+        # also check RPMs on CDS & HAProxy nodes, but only if they're configured
+        if cds_exists:
+            Expect.expect_retval(CDS, f"cds rpm -q {rpm}", 1)
+        if haproxy_exists:
+            Expect.expect_retval(HAPROXY, f"ha rpm -q {rpm}", 1)
+
+def test_08_pgsql_locale():
     """check if PostgreSQL can run with a non-defalt locale setting"""
     default_locale = "C.UTF-8"
     other_locale = "ja_JP.UTF-8"
@@ -115,6 +133,28 @@ def test_07_pgsql_locale():
     Expect.expect_retval(RHUA, restart_cmd)
     # chech the result only in the end
     nose.tools.eq_(restart_status, 0)
+
+def test_09_cds_networking():
+    """check if the CDS uses pasta or slirp4netns"""
+    if not Helpers.check_service(CDS, "rhui_cds"):
+        raise nose.SkipTest("The test CDS is down.")
+    what = "slirp4netns" if Util.get_rhel_version(CDS)["major"] < 10 else "pasta"
+    _, stdout, _ = CDS.exec_command(f"pgrep {what}")
+    output = stdout.read().decode().strip()
+    try:
+        int(output)
+        valid_pid = True
+    except ValueError:
+        valid_pid = False
+    nose.tools.ok_(valid_pid, msg=f"unexpected PID search result: '{output or '(nothing)'}'")
+
+def test_10_cds_upstream_rhua_ssl():
+    """check if rhua_ssl isn't configured on the CDS by default"""
+    if not Helpers.check_service(CDS, "rhui_cds"):
+        raise nose.SkipTest("The test CDS is down.")
+    _, stdout, _ = CDS.exec_command("cds grep -A2 rhua-ssl /etc/nginx/conf.d/ssl.conf")
+    output = stdout.read().decode().strip()
+    nose.tools.ok_(not output, msg=f"unexpected configuration: '{output}'")
 
 def test_99_cleanup():
     """clean up"""

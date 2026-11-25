@@ -159,10 +159,13 @@ class RHUIAPI():
         return subprocess.getoutput(cmd)
 
     @staticmethod
-    def cds_k8s(ssl_cert_secret_name):
+    def cds_k8s(ssl_cert_secret_name, container_image=""):
         """generate K8s YAML"""
         data = {}
         data["ssl_cert_secret_name"] = ssl_cert_secret_name
+        if container_image:
+            data["container_image"] = container_image
+            data["force"] = True
         cmd = f"{BASE_COMMAND} -d '{json.dumps(data)}' {BASE_URL}cds/k8s"
         return subprocess.getoutput(cmd)
 
@@ -231,3 +234,23 @@ class RHUIAPI():
             data["omit_repo_sslcacert"] = True
         cmd = f"{BASE_COMMAND} -d '{json.dumps(data)}' {BASE_URL}client/rpm"
         return subprocess.getoutput(cmd)
+
+    @staticmethod
+    def status_repos():
+        """list repositories with details and sync statuses"""
+        return subprocess.getoutput(f"{BASE}status/repos")
+
+    @staticmethod
+    def status_rhua():
+        """status report for the RHUA node"""
+        return subprocess.getoutput(f"{BASE}status/rhua")
+
+    @staticmethod
+    def status_cds():
+        """status report for the CDS nodes"""
+        return subprocess.getoutput(f"{BASE}status/cds")
+
+    @staticmethod
+    def status_haproxy():
+        """status report for the HAProxy nodes"""
+        return subprocess.getoutput(f"{BASE}status/haproxy")

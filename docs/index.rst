@@ -17,6 +17,7 @@ Welcome to the RHUI 5 Test Plan!
    compliance
    comps
    containers
+   crl
    custom_certs
    entitlements
    eus_cmd
@@ -26,6 +27,7 @@ Welcome to the RHUI 5 Test Plan!
    image_cleanup
    k8s_configuration
    omit_cacert
+   proxy_updates
    pulp_workers
    repo_management
    repo_prefix
@@ -38,6 +40,7 @@ Welcome to the RHUI 5 Test Plan!
    switch_storage
    sync_management
    sync_policies
+   timers
    updateinfo
    user_management
 

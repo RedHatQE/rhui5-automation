@@ -9,7 +9,7 @@ import logging
 import nose
 from stitches.expect import Expect
 
-from rhui5_tests_lib.cfg import RHUI_ROOT
+from rhui5_tests_lib.cfg import Config, RHUI_ROOT
 from rhui5_tests_lib.conmgr import ConMgr
 from rhui5_tests_lib.helpers import Helpers
 from rhui5_tests_lib.rhuimanager import RHUIManager
@@ -55,19 +55,28 @@ def test_04_list_cds():
     cds_list = RHUIManagerInstance.list(RHUA, "cds")
     nose.tools.assert_equal(len(cds_list), len(CDS_HOSTNAMES))
 
-def test_05_readd_cds():
+def test_05_readd_cds_using_add():
     '''
         add one of the CDSs again (reapply the configuration)
     '''
     # choose a random CDS hostname from the list
     RHUIManagerInstance.add_instance(RHUA, "cds", random.choice(CDS_HOSTNAMES), update=True)
-
-def test_06_list_cds():
-    '''
-        check if the CDSs are still tracked
-    '''
+    # check if the CDSs are still tracked
     cds_list = RHUIManagerInstance.list(RHUA, "cds")
-    nose.tools.assert_equal(len(cds_list), len(CDS_HOSTNAMES))
+    nose.tools.eq_(len(cds_list), len(CDS_HOSTNAMES))
+
+def test_06_readd_cds_using_reinstall():
+    '''
+        reinstall the first CDS
+    '''
+    RHUIManagerInstance.reinstall(RHUA, "cds")
+    # check if the CDS image tag matches the RHUI version (IOW, is pinned)
+    actual_rhui_version = Config.get_rhui_version(RHUA)
+    cds_data = Config.get_instance_data(RHUA, "cds", CDS_HOSTNAMES[0])
+    saved_image_name = cds_data["container_image"]
+    saved_image_id = saved_image_name.split(":")
+    saved_image_tag = saved_image_id[1]
+    nose.tools.eq_(saved_image_tag, actual_rhui_version)
 
 def test_07_delete_nonexisting_cds():
     '''

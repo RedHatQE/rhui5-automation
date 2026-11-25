@@ -71,7 +71,7 @@ PRS.add_argument("--auth",
                       f"'_' as an alias for auth.json in {RHUI_DIR}",
                  metavar="file")
 PRS.add_argument("--custom-certs",
-                 help=f"install RHUI with custom certificates",
+                 help="install RHUI with custom certificates",
                  action="store_true")
 PRS.add_argument("--creds-in-answers",
                  help="supply registry credentials in the answers file",
@@ -126,6 +126,9 @@ PRS.add_argument("--local-content",
 PRS.add_argument("--expected-rhui-version",
                  help="check if the RHUA image is tagged with an expected RHUI version",
                  metavar="version")
+PRS.add_argument("--pulp-cert-shortlived",
+                 help="create the Pulp web server certificate with a short expiration period",
+                 action="store_true")
 PRS.add_argument("--dry-run",
                  help="only construct and print the ansible-playbook command, do not run it",
                  action="store_true")
@@ -177,9 +180,9 @@ elif PRESET_RHUA_IMAGE:
     EVARS += " rhua_image=" + PRESET_RHUA_IMAGE
 
 if ARGS.cds_k8s_image:
-     EVARS += " cds_k8s_image=" + ARGS.cds_k8s_image
+    EVARS += " cds_k8s_image=" + ARGS.cds_k8s_image
 elif PRESET_CDS_K8S_IMAGE:
-     EVARS += " cds_k8s_image=" + PRESET_CDS_K8S_IMAGE
+    EVARS += " cds_k8s_image=" + PRESET_CDS_K8S_IMAGE
 
 if ARGS.rhsm:
     EVARS += " rhsm=True"
@@ -307,6 +310,9 @@ if ARGS.toanotherrhua:
 
 if ARGS.expected_rhui_version:
     EVARS += " expected_rhui_version=" + ARGS.expected_rhui_version
+
+if ARGS.pulp_cert_shortlived:
+    EVARS += " pulp_cert_shortlived=True"
 
 if ARGS.extra_vars:
     EVARS += " " + ARGS.extra_vars

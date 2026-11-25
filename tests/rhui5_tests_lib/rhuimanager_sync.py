@@ -5,7 +5,7 @@ import time
 
 import nose
 
-from stitches.expect import Expect, CTRL_C
+from stitches.expect import Expect, ExpectFailed, CTRL_C
 
 from rhui5_tests_lib.cfg import RHUI_ROOT
 from rhui5_tests_lib.rhuimanager import RHUIManager
@@ -67,6 +67,30 @@ class RHUIManagerSync():
             if status == "Error":
                 raise TypeError("The repo sync returned Error")
             nose.tools.assert_equal(status, "Success")
+
+    @staticmethod
+    def view_last_sync_details(connection, index=1):
+        """view the details of the last repository sync"""
+        # Specify the repo by its index (1+), not its name (for technical reasons).
+        # Return an info dict, unless an error occurs. Or None if the repo hasn't been synced yet.
+        RHUIManager.screen(connection, "sync")
+        Expect.enter(connection, "vr")
+        Expect.expect(connection, "Select a repository.*abort:", 60)
+        Expect.enter(connection, str(index))
+        pattern = re.compile(r".*(Repo:.*)\r\n\r\n-+\r\nrhui\s* \(sync\)\s* =>", re.DOTALL)
+        error = False
+        try:
+            all_lines = Expect.match(connection, pattern)[0].splitlines()
+        except ExpectFailed:
+            error = True
+        finally:
+            Expect.enter(connection, "q")
+            time.sleep(5)
+        if error:
+            raise RuntimeError("Unexpected error, check logs!")
+        if all_lines[1] == "No syncs have been completed for this repository.":
+            return None
+        return Util.lines_to_dict(all_lines)
 
     @staticmethod
     def export_repos(connection, repolist):

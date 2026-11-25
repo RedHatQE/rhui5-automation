@@ -62,6 +62,7 @@ custom_certs/ssl.key
 repo_files/good_repos.yaml
 repo_files/bad_ids.yaml
 repo_files/bad_name.yaml
+repo_files/dup_ids.yaml
 repo_files/no_name.yaml
 repo_files/no_repo_ids.yaml
 repo_files/wrong_repo_id.yaml
