@@ -66,6 +66,7 @@ class TestACSClient():
             RHUIManagerCLI.cert_upload(RHUA)
         RHUIManagerCLI.repo_add_by_repo(RHUA, [self.rh_repo_id], True)
         RHUIManagerCLI.repo_create_custom(RHUA, self.custom_repo_id, protected=True)
+        RHUIManagerCLI.repo_export(RHUA, self.rh_repo_id)
 
     def test_03_create_acs_config(self):
         """crete an ACS configuration JSON file"""
@@ -123,6 +124,7 @@ class TestACSClient():
 
     def test_06_check_test_package(self):
         """check if the client can download a test package"""
+        Expect.expect_retval(CLI, "yum clean all")
         Yummy.download(CLI, [self.test_package], TMPDIR)
 
     def test_99_cleanup(self):

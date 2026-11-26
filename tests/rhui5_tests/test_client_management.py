@@ -219,11 +219,13 @@ class TestClient():
 
     def test_11_check_repo_sync_status(self):
         '''
-           check if RH repos have been synced so RPMs can be installed from them
+           check if RH repos have been synced and exported so RPMs can be installed from them
         '''
         RHUIManagerSync.wait_till_repo_synced(RHUA,
                                               [Util.format_repo(self.yum_repo_name,
                                                                 self.yum_repo_version)])
+        RHUIManagerSync.export_repos(RHUA, [Util.format_repo(self.yum_repo_name,
+                                                             self.yum_repo_version)])
 
     def test_12_inst_rpm_custom_repo(self):
         '''
@@ -231,6 +233,7 @@ class TestClient():
         '''
         if getenv("RHUIPREP"):
             raise nose.SkipTest("Only the setup was requested.")
+        Expect.expect_retval(CLI, "yum clean all")
         test_rpm_name = self.custom_rpm.rsplit('-', 2)[0]
         Yummy.install(CLI, [test_rpm_name], False)
 
