@@ -79,6 +79,17 @@ def test_03_check_confidential_data():
                       "/var/lib/rhui/config/rhua/rhui-tools.conf",
                       sosreport_location)
 
+def test_04_check_interesting_data():
+    """check if some expected information is collected in the archive"""
+    with open(SOSREPORT_LOCATION, encoding="utf-8") as location:
+        sosreport_location = location.read()
+    # good status
+    Sos.find_in_file(RHUA,
+                     "Exit code\n\n0",
+                     Sos.encode_sos_command(RHUI_CMDS[0]),
+                     sosreport_location,
+                     True)
+
 def test_99_cleanup():
     """delete the archive and its checksum file, local cache"""
     with open(SOSREPORT_LOCATION, encoding="utf-8") as location:

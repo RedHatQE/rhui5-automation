@@ -4,6 +4,8 @@ import re
 
 import nose
 
+from rhui5_tests_lib.util import Util
+
 class Sos():
     """Sos handling for RHUI"""
     @staticmethod
@@ -43,15 +45,30 @@ class Sos():
                        msg=f"Not found in the archive: {missing_files}")
 
     @staticmethod
-    def is_obfuscated(connection, match, path, archive):
-        """check if the value of the option in the file (path) in the archive is obfuscated"""
+    def cat(connection, path, archive):
+        """return the content of (print) the file (path) in the sos archive"""
         # make sure the archive exists
         if connection.recv_exit_status(f"test -f {archive}"):
             raise OSError(f"{archive} does not exist")
         # print the file from the archive
         cmd = f"tar xf {archive} --wildcards 'sosreport-*{path}' -O"
         _, stdout, _ = connection.exec_command(cmd)
-        lines = stdout.read().decode().splitlines()
+        return stdout.read().decode()
+
+    @staticmethod
+    def find_in_file(connection, match, path, archive, uncolorify=False):
+        """check if the string is in the file (path) in the archive"""
+        content = Sos.cat(connection, path, archive)
+        if uncolorify:
+            content = Util.uncolorify(content)
+        if match in content:
+            return True
+        raise AssertionError(f"'{match}' not found in {path}, content: '{content}'")
+
+    @staticmethod
+    def is_obfuscated(connection, match, path, archive):
+        """check if the value of the option in the file (path) in the archive is obfuscated"""
+        lines = Sos.cat(connection, path, archive).splitlines()
         problems = [line for line in lines if match in line and not line.endswith("********")]
         nose.tools.ok_(not problems, msg=f"Problematic lines: {problems}")
 
