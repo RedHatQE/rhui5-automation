@@ -70,7 +70,9 @@ class Sos():
         """check if the value of the option in the file (path) in the archive is obfuscated"""
         lines = Sos.cat(connection, path, archive).splitlines()
         problems = [line for line in lines if match in line and not line.endswith("********")]
-        nose.tools.ok_(not problems, msg=f"Problematic lines: {problems}")
+        if not problems:
+            return True
+        raise AssertionError(f"Problematic lines: {problems}")
 
     @staticmethod
     def encode_sos_command(command, plugin="rhui_containerized"):
